@@ -42,7 +42,7 @@ local glideSpells = {
 }
 
 local function getSoundFilePath(file)
-    return "Sound\\" .. MOD_NAME .. "\\" .. file
+    return "sound\\" .. MOD_NAME .. "\\" .. file
 end
 
 local sounds = {
@@ -124,6 +124,7 @@ local function removeGlider()
         return
     end
     persist.applied = false
+    print("Removing glider...")
     -- reset movement
     pself.controls.movement = 0
     -- remove spell effects
@@ -140,17 +141,17 @@ local function applyGlider()
     if not canApply() then
         return
     end
-    if persist.applied then
-        settings.debugPrint("already applied glider")
-        return
-    end
     persist.applied = true
+    print("Applying glider...")
     -- set movement on this frame
     pself.controls.movement = 1
     -- apply sound
     core.sound.playSoundFile3d(sounds.wind, pself, {
         volume = settings.main.volume * 0.3,
         loop = true,
+    })
+    core.sound.playSoundFile3d(getSoundFilePath("breath_in.mp3"), pself, {
+        volume = settings.main.volume,
     })
     -- apply spell
     applyGlideSpell()
@@ -161,12 +162,13 @@ end
 
 input.registerTriggerHandler("Jump", async:callback(
     function()
+        if not settings.main.enable then
+            return
+        end
         print("jump detected")
         if persist.applied then
-            print("Removing glider...")
             removeGlider()
         else
-            print("Applying glider...")
             applyGlider()
         end
     end
