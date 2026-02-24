@@ -41,7 +41,7 @@ local function init()
                 key = "enable",
                 name = "enableName",
                 description = "enableDescription",
-                default = false,
+                default = true,
                 renderer = "checkbox",
             },
             {

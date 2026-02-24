@@ -46,7 +46,9 @@ local function getSoundFilePath(file)
 end
 
 local sounds = {
-    wind = getSoundFilePath("wind.mp3")
+    wind = getSoundFilePath("wind.mp3"),
+    breath_in = getSoundFilePath("breath_in.mp3"),
+    hit_wall = "Sound\\Fx\\FOOT\\land_lt.wav"
 }
 
 local function applyGlideSpell()
@@ -64,6 +66,18 @@ local function applyGlideSpell()
         ignoreSpellAbsorption = true,
         ignoreReflect = true
     })
+end
+
+local function touchingWall()
+    local pselfCenter = pself:getBoundingBox().center
+    local facing = pself.rotation:apply(util.vector3(0.0, 1.0, 0.0)):normalize()*70
+
+    local castResult = nearby.castRay(pselfCenter, pselfCenter+facing, {
+        collisionType = nearby.COLLISION_TYPE.AnyPhysical,
+        ignore = pself
+    })
+
+    return castResult.hit
 end
 
 local fatigueStat = pself.type.stats.dynamic.fatigue(pself)
@@ -150,7 +164,7 @@ local function applyGlider()
         volume = settings.main.volume * 0.3,
         loop = true,
     })
-    core.sound.playSoundFile3d(getSoundFilePath("breath_in.mp3"), pself, {
+    core.sound.playSoundFile3d(sounds.breath_in, pself, {
         volume = settings.main.volume,
     })
     -- apply spell
@@ -192,6 +206,15 @@ local function onUpdate(dt)
             local whole = math.floor(fatigueDebt)
             fatigueDebt = fatigueDebt - whole
             fatigueStat.current = fatigueStat.current - whole
+
+            -- do this check less frequently
+            if touchingWall() then
+                core.sound.playSoundFile3d(sounds.hit_wall, pself, {
+                    volume = settings.main.volume,
+                })
+                removeGlider()
+                return
+            end
         end
     else
         fatigueDebt = 0
