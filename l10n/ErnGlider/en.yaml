@@ -1,0 +1,11 @@
+name: "Glider"
+description: "Gracefully glide through the air by double-jumping while your hands are unreadied."
+settings: "Settings"
+
+enableName: "Enable"
+enableDescription: "Enable or disable the whole mod."
+debugName: "Debug Mode"
+fatigueCostName: "Fatigue Cost"
+fatigueCostDescription: "Fatigue cost per second while gliding. If you run out of Fatigue, you fall."
+volumeCostName: "Volume"
+volumeDescription: "Sound effect volume factor."
