@@ -26,13 +26,13 @@ local input = require('openmw.input')
 local controls = require('openmw.interfaces').Controls
 local nearby = require('openmw.nearby')
 local animation = require('openmw.animation')
-local cameraInterface = require("openmw.interfaces").Camera
-local uiInterface = require("openmw.interfaces").UI
+local interfaces = require("openmw.interfaces")
 local settings = require("scripts.ErnGlider.settings")
 
 local persist = {
-    canApply=false,
-    applied=false
+    canApply = false,
+    applied = false,
+    appliedDuration = 0,
 }
 
 local glideSpells = {
@@ -54,36 +54,41 @@ local sounds = {
 local function applyGlideSpell()
     local acrobatics = pself.type.stats.skills.acrobatics(pself).modified
     local record = glideSpells.eg_glide_3
-    if acrobatics <= 20 then
+    if acrobatics <= 40 then
         record = glideSpells.eg_glide_1
-    elseif acrobatics <= 60 then
+    elseif acrobatics <= 80 then
         record = glideSpells.eg_glide_2
     end
     pself.type.activeSpells(pself):add({
         id = record,
-        effects = { 0,1 },
+        effects = { 0, 1 },
         ignoreResistances = true,
         ignoreSpellAbsorption = true,
         ignoreReflect = true
     })
 end
 
-local function touchingWall()
+local function touching()
     local pselfCenter = pself:getBoundingBox().center
-    local facing = pself.rotation:apply(util.vector3(0.0, 1.0, 0.0)):normalize()*70
+    local facing = pself.rotation:apply(util.vector3(0.0, 1.0, 0.0)):normalize() * 70
 
-    local castResult = nearby.castRay(pselfCenter, pselfCenter+facing, {
+    local castResult = nearby.castRay(pselfCenter, pselfCenter + facing, {
         collisionType = nearby.COLLISION_TYPE.AnyPhysical,
         ignore = pself
     })
 
-    return castResult.hit
+    return castResult
 end
 
+local enduranceStat = pself.type.stats.attributes.endurance(pself)
 local fatigueStat = pself.type.stats.dynamic.fatigue(pself)
 
 local function instantCost()
-    return math.ceil(settings.main.fatigueCost * 1.5)
+    return math.ceil(settings.main.fatigueCost)
+end
+
+local function naturalFatigueRegenRate()
+    return 2.5 + (0.02 * enduranceStat.modified)
 end
 
 local function onInit(initData)
@@ -137,7 +142,18 @@ local function removeGlider()
     if not persist.applied then
         return
     end
+    print("Glide duration: " .. tostring(persist.appliedDuration))
+    -- apply skill XP for glides longer than 3 seconds.
+    if persist.appliedDuration > 3 then
+        interfaces.SkillProgression.skillUsed(core.stats.Skill.records.acrobatics.id,
+            {
+                scale = persist.appliedDuration - 3,
+                useType = interfaces.SkillProgression.SKILL_USE_TYPES
+                    .Acrobatics_Jump
+            })
+    end
     persist.applied = false
+    persist.appliedDuration = 0
     print("Removing glider...")
     -- reset movement
     pself.controls.movement = 0
@@ -188,7 +204,39 @@ input.registerTriggerHandler("Jump", async:callback(
     end
 ))
 
+local function onHit(victimActor)
+    -- victimActor is nil or a target actor that was run into.
+    core.sound.playSoundFile3d(sounds.hit_wall, pself, {
+        volume = settings.main.volume,
+    })
+    removeGlider()
+    -- https://github.com/OpenMW/openmw/blob/87b266c1365696ce76fede471dd549f8184f090a/apps/openmw/mwrender/animation.cpp#L814-L828
+    -- https://github.com/OpenMW/openmw/blob/87b266c1365696ce76fede471dd549f8184f090a/apps/openmw/mwmechanics/character.cpp#L219-L245
+
+    local gliderAnim = victimActor and 'hit' .. tostring(math.random(1, 5)) or 'knockdown'
+
+    interfaces.AnimationController.playBlendedAnimation(gliderAnim, {
+        priority = animation.PRIORITY.Knockdown,
+        autoDisable = true,
+    })
+
+    if victimActor then
+        victimActor:sendEvent(MOD_NAME .. 'onHitByGlider', {
+            glider = pself,
+            victim = victimActor,
+        })
+        if types.NPC.objectIsInstance(victimActor) then
+            core.sendGlobalEvent(MOD_NAME .. 'onHitByGlider', {
+                glider = pself,
+                victim = victimActor,
+            })
+        end
+    end
+end
+
 local fatigueDebt = 0
+local rayCastDelay = 0
+
 local function onUpdate(dt)
     if dt == 0 then return end
     if not settings.main.enable then
@@ -201,21 +249,28 @@ local function onUpdate(dt)
             removeGlider()
             return
         end
-        fatigueDebt = fatigueDebt + settings.main.fatigueCost * dt
+        -- only remove whole units of fatigue
+        fatigueDebt = fatigueDebt + (naturalFatigueRegenRate() + settings.main.fatigueCost) * dt
         if fatigueDebt > 1 then
             local whole = math.floor(fatigueDebt)
             fatigueDebt = fatigueDebt - whole
             fatigueStat.current = fatigueStat.current - whole
-
-            -- do this check less frequently
-            if touchingWall() then
-                core.sound.playSoundFile3d(sounds.hit_wall, pself, {
-                    volume = settings.main.volume,
-                })
-                removeGlider()
+        end
+        -- do this check less frequently
+        rayCastDelay = rayCastDelay + dt
+        if rayCastDelay > 0.3 then
+            local touchResult = touching()
+            if touchResult.hit then
+                local actor = nil
+                if touchResult.hitObject and types.Actor.objectIsInstance(touchResult.hitObject) then
+                    actor = touchResult.hitObject
+                end
+                onHit(actor)
                 return
             end
         end
+        -- track duration of glide
+        persist.appliedDuration = persist.appliedDuration + dt
     else
         fatigueDebt = 0
     end
@@ -223,7 +278,19 @@ end
 
 local function onFrame()
     if persist.applied then
-        pself.controls.movement = 1
+        if windVec then
+            local facing = pself.rotation:apply(forwardVec):normalize()
+            local dot = facing:dot(windVec:normalize())
+            -- this is messed up somehow
+            pself.controls.movement = (1 + dot) / 2
+            print("dot: " ..
+                tostring(dot) .. " spd: " .. tostring(pself.controls.movement))
+        else
+            pself.controls.movement = 1
+        end
+        -- limiting turning and side-to-side feels bad
+        --pself.controls.sideMovement = util.remap(pself.controls.sideMovement, -1, 1, -0.5, 0.5)
+        --pself.controls.yawChange = util.remap(pself.controls.yawChange, -1, 1, -0.3, 0.3)
     end
 end
 

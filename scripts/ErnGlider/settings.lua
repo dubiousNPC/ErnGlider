@@ -48,7 +48,7 @@ local function init()
                 key = "fatigueCost",
                 name = "fatigueCostName",
                 description = "fatigueCostDescription",
-                default = 5,
+                default = 7,
                 renderer = "number",
                 argument = {
                     integer = true,
