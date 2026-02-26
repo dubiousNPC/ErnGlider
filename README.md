@@ -4,11 +4,15 @@ OpenMW mod that adds a glider when you double-jump outside.
 
 Add both `ErnGlider.omwaddon` and `ErnGlider.omwscripts`!
 
+## Using Your Glider
+
+Gliders only work while outside. While in an unreadied stance (your weapon is sheathed and you don't have your spellcasting hands out), do a double jump. This will activate your glider, which drains fatigue. Tap your jump button again to put the glider away.
+
 ## Walkthrough
 
-1. Talk to a friendly Acrobat to get a basic glider.
-2. Talk to a friendly Savant when you have at least 40 Acrobatics to upgrade your glider.
-3. Talk to a friendly Savant when you have at least 80 Acrobatics to upgrade your glider again.
+1. Talk to a friendly [Acrobat](https://en.uesp.net/wiki/Category:Morrowind-Acrobat) to get a basic glider.
+2. Talk to a friendly [Savant](https://en.uesp.net/wiki/Category:Morrowind-Savant) when you have at least 40 Acrobatics to upgrade your glider.
+3. Talk to a friendly [Savant](https://en.uesp.net/wiki/Category:Morrowind-Savant) when you have at least 80 Acrobatics to upgrade your glider again.
 
 If you're using `Ben's Skyships (OpenMW)`, you can instead just talk to a glider expert.
 
@@ -25,5 +29,6 @@ If you're using `Ben's Skyships (OpenMW)`, you can instead just talk to a glider
 
 ## TODO
 
+- Meshes
 - Gliding animation.
-- Extra boost when over lava
+- Extra boost when over lava?
