@@ -35,10 +35,31 @@ local persist = {
     appliedDuration = 0,
 }
 
+pself.type.addTopic(pself, "glider")
+
+local function getCurrentGlider()
+    local gliderQuest = pself.type.quests(pself)["eg_glider"]
+    local gliderStage = gliderQuest and gliderQuest.stage or 0
+    if gliderStage >= 31 then
+        return "eg_glide_3"
+    elseif gliderStage >= 21 then
+        return "eg_glide_2"
+    elseif gliderStage >= 1 then
+        return "eg_glide_1"
+    else
+        return nil
+    end
+end
+
 local glideSpells = {
     eg_glide_1 = "eg_glide_1",
     eg_glide_2 = "eg_glide_2",
     eg_glide_3 = "eg_glide_3",
+}
+local glideVFX = {
+    eg_glide_1 = "meshes\\a\\a_dreugh_helm.nif",
+    eg_glide_2 = "meshes\\a\\a_bonemold_chuzei_helmet.nif",
+    eg_glide_3 = "meshes\\a\\a_dustadept_helm.nif",
 }
 
 local function getSoundFilePath(file)
@@ -51,21 +72,17 @@ local sounds = {
     hit_wall = "Sound\\Fx\\FOOT\\land_lt.wav"
 }
 
-local function applyGlideSpell()
-    local acrobatics = pself.type.stats.skills.acrobatics(pself).modified
-    local record = glideSpells.eg_glide_3
-    if acrobatics <= 40 then
-        record = glideSpells.eg_glide_1
-    elseif acrobatics <= 80 then
-        record = glideSpells.eg_glide_2
-    end
+local function applyGlideSpell(currentGlider)
+    local spell = glideSpells[currentGlider]
+    local vfx = glideVFX[currentGlider]
     pself.type.activeSpells(pself):add({
-        id = record,
+        id = spell,
         effects = { 0, 1 },
         ignoreResistances = true,
         ignoreSpellAbsorption = true,
         ignoreReflect = true
     })
+    animation.addVfx(pself, vfx, { loop = true, boneName = "Head", vfxId = "glider" })
 end
 
 local function touching()
@@ -163,6 +180,8 @@ local function removeGlider()
             pself.type.activeSpells(pself):remove(spell.activeSpellId)
         end
     end
+    -- remove vfx
+    animation.removeVfx(pself, "glider")
     -- remove sound
     core.sound.stopSoundFile3d(sounds.wind, pself)
 end
@@ -171,6 +190,13 @@ local function applyGlider()
     if not canApply() then
         return
     end
+
+    local currentGlider = getCurrentGlider()
+    if currentGlider == nil then
+        settings.debugPrint("glider quest not started")
+        return
+    end
+
     persist.applied = true
     print("Applying glider...")
     -- set movement on this frame
@@ -184,7 +210,7 @@ local function applyGlider()
         volume = settings.main.volume,
     })
     -- apply spell
-    applyGlideSpell()
+    applyGlideSpell(currentGlider)
     -- apply initial cost
     local cost = instantCost()
     fatigueStat.current = fatigueStat.current - cost
@@ -195,7 +221,6 @@ input.registerTriggerHandler("Jump", async:callback(
         if not settings.main.enable then
             return
         end
-        print("jump detected")
         if persist.applied then
             removeGlider()
         else

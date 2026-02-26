@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]
 local MOD_NAME = require("scripts.ErnGlider.ns")
 local types = require("openmw.types")
+local world = require("openmw.world")
 local interfaces = require("openmw.interfaces")
 
 
@@ -27,7 +28,6 @@ local function onHitByGlider(data)
         victimAware = true,
     })
 end
-
 
 return {
     eventHandlers = {

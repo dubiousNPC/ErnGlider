@@ -4,12 +4,13 @@ OpenMW mod that adds a glider when you double-jump outside.
 
 Add both `ErnGlider.omwaddon` and `ErnGlider.omwscripts`!
 
-Be sure to enable these:
-- https://openmw.readthedocs.io/en/stable/reference/modding/settings/game.html#use-additional-anim-sources
-- https://openmw.readthedocs.io/en/stable/reference/modding/settings/game.html#smooth-animation-transitions
+## Walkthrough
 
-And don't enable this:
-- https://openmw.readthedocs.io/en/stable/reference/modding/settings/game.html#player-movement-ignores-animation
+1. Talk to a friendly Acrobat to get a basic glider.
+2. Talk to a friendly Savant when you have at least 40 Acrobatics to upgrade your glider.
+3. Talk to a friendly Savant when you have at least 80 Acrobatics to upgrade your glider again.
+
+If you're using `Ben's Skyships (OpenMW)`, you can instead just talk to a glider expert.
 
 ## Credits
 
@@ -18,14 +19,11 @@ And don't enable this:
 - Wind 1 Loop by jasoneweber -- https://freesound.org/s/179110/ -- License: Attribution 3.0
 - Breath In by mooncubedesign -- https://freesound.org/s/319247/ -- License: Creative Commons 0
 
-### Animations
+### Meshes
 
-- https://gitlab.com/fallchildren/openmw-animated-levitation/
+- Gliders by Semaro, used with explicit permission.
 
 ## TODO
 
 - Gliding animation.
-- Glider item that you need in your inventory to do this.
-- Subsequent re-deploys cost more fatigue each time.
-- Stagger actors if you run into them.
-- Extra boost when over lava? Low ROI.
+- Extra boost when over lava

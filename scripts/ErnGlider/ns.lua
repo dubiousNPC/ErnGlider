@@ -16,3 +16,15 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]
 return "ErnGlider"
+
+--[[
+Quest: EG_Glider
+1 - obtained basic glider from glider expert or Acrobat
+20 - talk with glider expert or Savant to get advanced plans
+21 - purchased upgrade from smith
+30 - talk with glider expert or Savant to get masterwork plans
+31 - purchased final upgrade from smith
+
+Topic: glider
+
+]]
