@@ -29,8 +29,13 @@ local function onHitByGlider(data)
     })
 end
 
+local function onDamageItem(data)
+    types.Item.itemData(data.item).condition = types.Item.itemData(data.item).condition - data.amount
+end
+
 return {
     eventHandlers = {
         [MOD_NAME .. 'onHitByGlider'] = onHitByGlider,
+        [MOD_NAME .. 'onDamageItem'] = onDamageItem,
     }
 }

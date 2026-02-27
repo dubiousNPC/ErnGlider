@@ -6,7 +6,11 @@ Add both `ErnGlider.omwaddon` and `ErnGlider.omwscripts`!
 
 ## Using Your Glider
 
-Gliders only work while outside. While in an unreadied stance (your weapon is sheathed and you don't have your spellcasting hands out), do a double jump. This will activate your glider, which drains fatigue. Tap your jump button again to put the glider away.
+Gliders only work while outside. While in an unreadied stance (your weapon is sheathed and you don't have your spellcasting hands out), do a double jump while holding forward. This will activate your glider, which drains fatigue. Tap your jump button again to put the glider away.
+
+## Shield Surfing
+
+Surfing only works while outside. While in an unreadied stance (your weapon is sheathed and you don't have your spellcasting hands out), do a double jump while holding backward. Shield surfing damages your shield, but you move faster while heading down-slope. Tap your jump button again to put your shield away.
 
 ## Walkthrough
 
@@ -32,3 +36,5 @@ If you're using `Ben's Skyships (OpenMW)`, you can instead just talk to a glider
 - Meshes
 - Gliding animation.
 - Extra boost when over lava?
+- shield surf animation
+- un-equip shield while surfing and then re-equip

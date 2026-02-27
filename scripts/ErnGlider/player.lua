@@ -36,10 +36,27 @@ input.registerTriggerHandler("Jump", async:callback(
         if not settings.main.enable then
             return
         end
-        if pself.controls.movement > epsilon then
-            interfaces.ErnGliderGlider.toggle()
-        elseif pself.controls.movement < -1 * epsilon then
-            --shield surf
+
+        -- go back to normal movement?
+        local removed = false
+        if interfaces.ErnGliderGlider.isApplied() then
+            interfaces.ErnGliderGlider.remove()
+            removed = true
+        elseif interfaces.ErnGliderSurf.isApplied() then
+            interfaces.ErnGliderSurf.remove()
+            removed = true
+        end
+        if removed then
+            return
+        end
+
+        -- apply special movement
+        if animation.isPlaying(pself, "jump") then
+            if pself.controls.movement > epsilon then
+                interfaces.ErnGliderGlider.apply()
+            elseif pself.controls.movement < -1 * epsilon then
+                interfaces.ErnGliderSurf.apply()
+            end
         end
     end
 ))

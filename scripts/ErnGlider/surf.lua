@@ -29,37 +29,19 @@ local animation = require('openmw.animation')
 local interfaces = require("openmw.interfaces")
 local settings = require("scripts.ErnGlider.settings")
 
+local startMomentum = 2
 local persist = {
     applied = false,
     appliedDuration = 0,
+    momentum = startMomentum,
+    activeShield = nil,
+    landed = false,
+    lastFootPos = nil,
+    currentFootPos = nil,
+    slope = 0
 }
 
-pself.type.addTopic(pself, "glider")
-
-local function getCurrentGlider()
-    local gliderQuest = pself.type.quests(pself)["eg_glider"]
-    local gliderStage = gliderQuest and gliderQuest.stage or 0
-    if gliderStage >= 31 then
-        return "eg_glide_3"
-    elseif gliderStage >= 21 then
-        return "eg_glide_2"
-    elseif gliderStage >= 1 then
-        return "eg_glide_1"
-    else
-        return nil
-    end
-end
-
-local glideSpells = {
-    eg_glide_1 = "eg_glide_1",
-    eg_glide_2 = "eg_glide_2",
-    eg_glide_3 = "eg_glide_3",
-}
-local glideVFX = {
-    eg_glide_1 = "meshes\\a\\a_dreugh_helm.nif",
-    eg_glide_2 = "meshes\\a\\a_bonemold_chuzei_helmet.nif",
-    eg_glide_3 = "meshes\\a\\a_dustadept_helm.nif",
-}
+local surfSpell = "eg_surf_1"
 
 local function getSoundFilePath(file)
     return "sound\\" .. MOD_NAME .. "\\" .. file
@@ -71,20 +53,39 @@ local sounds = {
     hit_wall = "Sound\\Fx\\FOOT\\land_lt.wav"
 }
 
-local function applyGlideSpell(currentGlider)
-    local spell = glideSpells[currentGlider]
-    local vfx = glideVFX[currentGlider]
+local function getShield()
+    if persist.activeShield then
+        return persist.activeShield
+    end
+    local leftHand = pself.type.getEquipment(pself, types.Actor.EQUIPMENT_SLOT.CarriedLeft)
+    if (not leftHand) or (not types.Armor.objectIsInstance(leftHand)) then
+        persist.activeShield = nil
+        return nil
+    end
+
+    print(leftHand)
+    if types.Armor.records[leftHand.recordId].type == types.Armor.TYPE.Shield then
+        persist.activeShield = leftHand
+        return persist.activeShield
+    end
+    persist.activeShield = nil
+    return nil
+end
+
+local function applySurfSpell()
+    local shieldModel = types.Armor.records[getShield().recordId].model
     pself.type.activeSpells(pself):add({
-        id = spell,
+        id = surfSpell,
         effects = { 0, 1 },
         ignoreResistances = true,
         ignoreSpellAbsorption = true,
         ignoreReflect = true
     })
-    animation.addVfx(pself, vfx, { loop = true, boneName = "Head", vfxId = "glider" })
+    animation.addVfx(pself, shieldModel, { loop = true, boneName = "Left Foot", vfxId = "surf" })
 end
 
 local forward = util.vector3(0.0, 1.0, 0.0)
+
 local function touchingWall()
     local pselfCenter = pself:getBoundingBox().center
     local facing = pself.rotation:apply(forward):normalize() * 70
@@ -95,17 +96,6 @@ local function touchingWall()
     })
 
     return castResult
-end
-
-local enduranceStat = pself.type.stats.attributes.endurance(pself)
-local fatigueStat = pself.type.stats.dynamic.fatigue(pself)
-
-local function instantCost()
-    return math.ceil(settings.main.fatigueCost)
-end
-
-local function naturalFatigueRegenRate()
-    return 2.5 + (0.02 * enduranceStat.modified)
 end
 
 local function onInit(initData)
@@ -123,84 +113,82 @@ local function onSave()
 end
 
 local function canApply()
-    if types.Actor.isOnGround(pself) then
-        settings.debugPrint("canApply gilder: on ground")
-        return false
-    end
     if types.Actor.getStance(pself) ~= types.Actor.STANCE.Nothing then
-        settings.debugPrint("canApply gilder: spell or weapon is readied")
-        return false
-    end
-    if not animation.isPlaying(pself, "jump") then
-        settings.debugPrint("canApply gilder: not jumping")
+        settings.debugPrint("canApply surf: spell or weapon is readied")
         return false
     end
     local levitateEffect = types.Actor.activeEffects(pself):getEffect(core.magic.EFFECT_TYPE.Levitate)
     if (levitateEffect ~= nil) and (levitateEffect.magnitude > 0) then
-        settings.debugPrint("canApply gilder: levitating")
-        return false
-    end
-    if fatigueStat.current < instantCost() then
-        settings.debugPrint("canApply gilder: can't pay instant fatigue cost")
+        settings.debugPrint("canApply surf: levitating")
         return false
     end
     if (not pself.cell.isExterior) and (not pself.cell:hasTag("QuasiExterior")) then
-        settings.debugPrint("canApply gilder: interior cell")
+        settings.debugPrint("canApply surf: interior cell")
         return false
     end
     if not types.Player.getControlSwitch(pself, types.Player.CONTROL_SWITCH.Controls) then
-        settings.debugPrint("canApply gilder: no control")
+        settings.debugPrint("canApply surf: no control")
+        return false
+    end
+    local shield = getShield()
+    if not shield then
+        settings.debugPrint("canApply surf: no shield")
+        return false
+    end
+    if types.Item.itemData(shield).condition <= 0 then
+        settings.debugPrint("canApply surf: shield broken")
         return false
     end
     return true
 end
 
-local function removeGlider()
+local function removeSurf()
     if not persist.applied then
         return
     end
-    print("Glide duration: " .. tostring(persist.appliedDuration))
-    -- apply skill XP for glides longer than 3 seconds.
-    if persist.appliedDuration > 3 then
-        interfaces.SkillProgression.skillUsed(core.stats.Skill.records.acrobatics.id,
-            {
-                scale = persist.appliedDuration - 1,
-                useType = interfaces.SkillProgression.SKILL_USE_TYPES
-                    .Acrobatics_Jump
-            })
-    end
+    print("Surf duration: " .. tostring(persist.appliedDuration))
     persist.applied = false
     persist.appliedDuration = 0
-    print("Removing glider...")
+    print("Removing surf...")
     -- reset movement
     pself.controls.movement = 0
+    -- todo: this will probably be bad
+    pself.controls.run = false
     -- remove spell effects
     for _, spell in pairs(pself.type.activeSpells(pself)) do
-        if glideSpells[spell.id] then
+        if spell.id == surfSpell then
             pself.type.activeSpells(pself):remove(spell.activeSpellId)
         end
     end
     -- remove vfx
-    animation.removeVfx(pself, "glider")
+    animation.removeVfx(pself, "surf")
     -- remove sound
     core.sound.stopSoundFile3d(sounds.wind, pself)
 end
 
-local function applyGlider()
+local function getFootPos()
+    local box = pself:getBoundingBox()
+    return box.center + util.vector3(0, 0, -box.halfSize.z)
+end
+
+local function applySurf()
     if not canApply() then
         return
     end
 
-    local currentGlider = getCurrentGlider()
-    if currentGlider == nil then
-        settings.debugPrint("glider quest not started")
-        return
-    end
-
     persist.applied = true
-    print("Applying glider...")
+    persist.momentum = startMomentum
+    persist.landed = false
+
+    persist.lastFootPos = getFootPos()
+    persist.currentFootPos = getFootPos()
+    persist.slope = 0
+
+    print("Applying surf...")
     -- set movement on this frame
     pself.controls.movement = 1
+    pself.controls.run = true
+    pself.controls.sideMovement = 0
     -- apply sound
     core.sound.playSoundFile3d(sounds.wind, pself, {
         volume = settings.main.volume * 0.3,
@@ -210,10 +198,9 @@ local function applyGlider()
         volume = settings.main.volume,
     })
     -- apply spell
-    applyGlideSpell(currentGlider)
-    -- apply initial cost
-    local cost = instantCost()
-    fatigueStat.current = fatigueStat.current - cost
+    applySurfSpell()
+
+    -- todo: unequip then re-equip shield
 end
 
 local function onHit(victimActor)
@@ -221,7 +208,8 @@ local function onHit(victimActor)
     core.sound.playSoundFile3d(sounds.hit_wall, pself, {
         volume = settings.main.volume,
     })
-    removeGlider()
+    settings.debugPrint("hit something")
+    removeSurf()
     -- https://github.com/OpenMW/openmw/blob/87b266c1365696ce76fede471dd549f8184f090a/apps/openmw/mwrender/animation.cpp#L814-L828
     -- https://github.com/OpenMW/openmw/blob/87b266c1365696ce76fede471dd549f8184f090a/apps/openmw/mwmechanics/character.cpp#L219-L245
 
@@ -246,30 +234,48 @@ local function onHit(victimActor)
     end
 end
 
-local fatigueDebt = 0
+local conditionDebt = 0
 local rayCastDelay = 0
+
 
 local function onUpdate(dt)
     if dt == 0 then return end
     if not settings.main.enable then
-        removeGlider()
+        removeSurf()
         return
     end
     if persist.applied then
         if not canApply() then
-            removeGlider()
+            removeSurf()
             return
         end
-        -- only remove whole units of fatigue
-        fatigueDebt = fatigueDebt + (naturalFatigueRegenRate() + settings.main.fatigueCost) * dt
-        if fatigueDebt > 1 then
-            local whole = math.floor(fatigueDebt)
-            fatigueDebt = fatigueDebt - whole
-            fatigueStat.current = fatigueStat.current - whole
+
+        -- track landing
+        if animation.isPlaying(pself, "jump") and not persist.landed then
+            settings.debugPrint("landed the surf!")
+            persist.landed = true
+        end
+        -- roll over foot positions
+        persist.lastFootPos = persist.currentFootPos
+        persist.currentFootPos = getFootPos()
+        local xyDist = util.vector2(persist.lastFootPos.x - persist.currentFootPos.x,
+            persist.lastFootPos.y - persist.currentFootPos.y):length()
+        persist.slope = (persist.currentFootPos.z - persist.lastFootPos.z) / xyDist
+
+        -- only remove whole units of condition
+        conditionDebt = conditionDebt + (settings.main.conditionCost * dt)
+        if conditionDebt > 1 then
+            local whole = math.floor(conditionDebt)
+            conditionDebt = conditionDebt - whole
+            core.sendGlobalEvent(MOD_NAME .. 'onDamageItem', {
+                item = getShield(),
+                amount = whole,
+            })
         end
         -- do this check less frequently
         rayCastDelay = rayCastDelay + dt
         if rayCastDelay > 0.3 then
+            settings.debugPrint("momentum: " .. persist.momentum .. ", slope: " .. persist.slope)
             local touchResult = touchingWall()
             if touchResult.hit then
                 local actor = nil
@@ -280,28 +286,36 @@ local function onUpdate(dt)
                 return
             end
         end
-        -- track duration of glide
+        -- track duration of surf
         persist.appliedDuration = persist.appliedDuration + dt
     else
-        fatigueDebt = 0
+        conditionDebt = 0
     end
 end
 
-local function onFrame()
+local function onFrame(dt)
     if persist.applied then
-        pself.controls.movement = 1
+        persist.momentum = util.clamp(persist.momentum - persist.slope * dt, 0, 1)
+        if persist.momentum <= 0 then
+            settings.debugPrint("out of momentum")
+            removeSurf()
+            return
+        end
+        pself.controls.sideMovement = 0
+        pself.controls.movement = persist.momentum
+        pself.controls.run = true
     end
 end
 
 return {
-    interfaceName = MOD_NAME .. "Glider",
+    interfaceName = MOD_NAME .. "Surf",
     interface = {
         version = 1,
         isApplied = function()
             return persist.applied
         end,
-        remove = removeGlider,
-        apply = applyGlider,
+        remove = removeSurf,
+        apply = applySurf,
     },
     engineHandlers = {
         onInit = onInit,
