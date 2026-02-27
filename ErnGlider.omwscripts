@@ -1,4 +1,5 @@
 MENU: scripts/ErnGlider/menu_settings.lua
+PLAYER: scripts/ErnGlider/glider.lua
 PLAYER: scripts/ErnGlider/player.lua
 NPC,CREATURE: scripts/ErnGlider/actor.lua
 GLOBAL: scripts/ErnGlider/global.lua
