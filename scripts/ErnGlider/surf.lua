@@ -66,7 +66,9 @@ local sounds = {
     wind = getSoundFilePath("wind.mp3"),
     breath_in = getSoundFilePath("breath_in.mp3"),
     gravel_road = getSoundFilePath("gravel_road.mp3"),
-    hit_wall = "Sound\\Fx\\body hit.wav"
+    hit_wall = "Sound\\Fx\\body hit.wav",
+    land_lt = "Sound\\Fx\\FOOT\\land_lt.wav",
+    land_md = "Sound\\Fx\\FOOT\\land_md.wav"
 }
 
 local function getShield()
@@ -199,6 +201,11 @@ local function removeSurf()
     -- remove sound
     core.sound.stopSoundFile3d(sounds.wind, pself)
     core.sound.stopSoundFile3d(sounds.gravel_road, pself)
+    -- play ending sound
+    core.sound.playSoundFile3d(sounds.land_lt, pself, {
+        volume = settings.main.volume,
+        loop = false,
+    })
 end
 
 local function getFootPos()
@@ -269,12 +276,15 @@ local function onHit(victimActor)
     end
 end
 
-local function onLand()
-    settings.debugPrint("landed the surf!")
-    core.sound.playSoundFile3d(sounds.gravel_road, pself, {
-        volume = settings.main.volume,
-        loop = true,
-    })
+local function slideSound()
+    if types.Actor.isOnGround(pself) and not core.sound.isSoundFilePlaying(sounds.gravel_road, pself) then
+        local vol = settings.main.volume * persist.momentum
+        settings.debugPrint("gravel sound volume: "..tostring(vol))
+        core.sound.playSoundFile3d(sounds.gravel_road, pself, {
+            volume = vol,
+            loop = false,
+        })
+    end
 end
 
 local conditionDebt = 0
@@ -297,11 +307,19 @@ local function onUpdate(dt)
             settings.debugPrint("fell from too high!")
             removeSurf()
         end
+
         -- track landing
         if (not animation.isPlaying(pself, "jump")) and not persist.landed then
-            onLand()
             persist.landed = true
+            -- play landing sound
+            core.sound.playSoundFile3d(sounds.land_md, pself, {
+                volume = settings.main.volume,
+                loop = false,
+            })
         end
+        -- update gravel sound
+        slideSound()
+
         -- roll over foot positions
         persist.lastFootPos = persist.currentFootPos
         persist.currentFootPos = getFootPos()
