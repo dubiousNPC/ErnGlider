@@ -129,7 +129,7 @@ local function touchingWall()
     local pselfCenter = pself:getBoundingBox().center
     local facing = pself.rotation:apply(forward):normalize() * 70
 
-    local castResult = nearby.castRay(pselfCenter, pselfCenter + facing, {
+    local castResult = nearby.castRay(pselfCenter, pselfCenter + util.vector3(facing.x, facing.y, 0), {
         collisionType = nearby.COLLISION_TYPE.AnyPhysical,
         ignore = pself
     })
