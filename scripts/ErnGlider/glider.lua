@@ -319,7 +319,7 @@ local function onFrame()
             startingYaw = 0
         end
         persist.sideMovement = util.clamp((persist.sideMovement + startingYaw * driftFactor) * driftDecay, -1, 1)
-        pself.controls.sideMovement = (persist.sideMovement + persist.sideMovement) / 2
+        pself.controls.sideMovement = (pself.controls.sideMovement + persist.sideMovement) / 2
     end
 end
 

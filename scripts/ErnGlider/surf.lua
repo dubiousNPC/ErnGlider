@@ -35,6 +35,8 @@ local startMomentum = 0.2
 local slopeDownMomentumRatio = 0.2
 -- upward slope penalty factor
 local slopeUpMomentumRatio = 0.6
+-- friction to decay momentum by
+local friction = 0.01
 -- how much yaw change contributes to side movement drift
 local driftFactor = 3.0
 -- side movement is multiplied by this each frame so it decays back to 0
@@ -279,7 +281,11 @@ local function onUpdate(dt)
             removeSurf()
             return
         end
-
+        -- did we hit the ground too hard?
+        if animation.isPlaying(pself, "knockdown") then
+            settings.debugPrint("fell from too high!")
+            removeSurf()
+        end
         -- track landing
         if animation.isPlaying(pself, "jump") and not persist.landed then
             settings.debugPrint("landed the surf!")
@@ -343,7 +349,7 @@ end
 
 local function onFrame(dt)
     if persist.applied then
-        persist.momentum = util.clamp(persist.momentum - slopeMomentumFactor(persist.slope) * dt, 0, 1)
+        persist.momentum = util.clamp(persist.momentum - (friction + slopeMomentumFactor(persist.slope)) * dt, 0, 1)
         if persist.momentum <= kickoutMinimumMomentum then
             settings.debugPrint("out of momentum")
             removeSurf()

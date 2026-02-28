@@ -29,6 +29,11 @@ local animation = require('openmw.animation')
 local interfaces = require("openmw.interfaces")
 local settings = require("scripts.ErnGlider.settings")
 
+--[[
+interfaces.AnimationController.addTextKeyHandler('', function(groupname, key)
+    settings.debugPrint(tostring(groupname) .. "/" .. tostring(key))
+end)
+]]
 
 input.registerTriggerHandler("Jump", async:callback(
     function()
