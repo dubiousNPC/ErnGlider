@@ -278,11 +278,22 @@ end
 
 local function slideSound()
     if types.Actor.isOnGround(pself) and not core.sound.isSoundFilePlaying(sounds.gravel_road, pself) then
-        local vol = settings.main.volume * persist.momentum
+        local vol = settings.main.volume * persist.momentum * .7
         settings.debugPrint("gravel sound volume: "..tostring(vol))
         core.sound.playSoundFile3d(sounds.gravel_road, pself, {
             volume = vol,
             loop = false,
+        })
+    end
+end
+
+local function animate()
+    if types.Actor.isOnGround(pself) and not animation.isPlaying(pself, 'sneakforward') then
+        settings.debugPrint("start hand loop")
+        interfaces.AnimationController.playBlendedAnimation('sneakforward', {
+            priority = animation.PRIORITY.Storm,
+            blendMask = animation.BLEND_MASK.UpperBody,
+            autoDisable = true,
         })
     end
 end
@@ -317,8 +328,11 @@ local function onUpdate(dt)
                 loop = false,
             })
         end
+
         -- update gravel sound
         slideSound()
+        -- hand animations
+        animate()
 
         -- roll over foot positions
         persist.lastFootPos = persist.currentFootPos
