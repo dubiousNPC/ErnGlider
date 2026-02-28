@@ -294,7 +294,7 @@ end
 local function slideSound()
     if types.Actor.isOnGround(pself) and not core.sound.isSoundFilePlaying(sounds.gravel_road, pself) then
         local vol = settings.main.volume * persist.momentum * .7
-        settings.debugPrint("gravel sound volume: "..tostring(vol))
+        --settings.debugPrint("gravel sound volume: " .. tostring(vol))
         core.sound.playSoundFile3d(sounds.gravel_road, pself, {
             volume = vol,
             loop = false,
