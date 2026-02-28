@@ -65,6 +65,7 @@ end
 local sounds = {
     wind = getSoundFilePath("wind.mp3"),
     breath_in = getSoundFilePath("breath_in.mp3"),
+    gravel_road = getSoundFilePath("gravel_road.mp3"),
     hit_wall = "Sound\\Fx\\body hit.wav"
 }
 
@@ -180,6 +181,7 @@ local function removeSurf()
     print("Surf duration: " .. tostring(persist.appliedDuration))
     persist.applied = false
     persist.appliedDuration = 0
+    persist.landed = false
     print("Removing surf...")
     -- reset movement
     persist.sideMovement = 0
@@ -196,6 +198,7 @@ local function removeSurf()
     animation.removeVfx(pself, "surf")
     -- remove sound
     core.sound.stopSoundFile3d(sounds.wind, pself)
+    core.sound.stopSoundFile3d(sounds.gravel_road, pself)
 end
 
 local function getFootPos()
@@ -266,6 +269,14 @@ local function onHit(victimActor)
     end
 end
 
+local function onLand()
+    settings.debugPrint("landed the surf!")
+    core.sound.playSoundFile3d(sounds.gravel_road, pself, {
+        volume = settings.main.volume,
+        loop = true,
+    })
+end
+
 local conditionDebt = 0
 local rayCastDelay = 0
 
@@ -287,8 +298,8 @@ local function onUpdate(dt)
             removeSurf()
         end
         -- track landing
-        if animation.isPlaying(pself, "jump") and not persist.landed then
-            settings.debugPrint("landed the surf!")
+        if (not animation.isPlaying(pself, "jump")) and not persist.landed then
+            onLand()
             persist.landed = true
         end
         -- roll over foot positions

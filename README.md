@@ -39,6 +39,7 @@ Masterwork glider: `setJournalIndex eg_glider 31`
 
 - Wind 1 Loop by jasoneweber -- https://freesound.org/s/179110/ -- License: Attribution 3.0
 - Breath In by mooncubedesign -- https://freesound.org/s/319247/ -- License: Creative Commons 0
+- Gravel Road by seth-m -- https://freesound.org/people/seth-m/sounds/341069/ -- License: Creative Commons 0
 
 ### Meshes & Textures
 
