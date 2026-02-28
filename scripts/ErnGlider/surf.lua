@@ -209,6 +209,9 @@ local function calcPoints(wipeout)
         persist.points.airPoints +
         persist.points.jumps * pointsPerJump +
         (persist.points.maxSpeed * persist.points.maxSpeed) * maxSpeedPointsModifier
+    if wipeout then
+        total = total / 2
+    end
 
     print("Surf points: " .. total)
 end
