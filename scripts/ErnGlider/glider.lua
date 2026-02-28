@@ -35,6 +35,8 @@ local driftFactor = 3.0
 local driftDecay = 0.9
 -- bone to attach glider to
 local gliderBone = "Neck"
+-- prevent gliding when fatigue is at this level.
+local minFatigue = 1
 
 local persist = {
     applied = false,
@@ -64,9 +66,9 @@ local glideSpells = {
     eg_glide_3 = "eg_glide_3",
 }
 local glideVFX = {
-    eg_glide_1 = "Meshes\\ErnGlider\\ErnGlider_Dwemer_01.nif",
-    eg_glide_2 = "Meshes\\ErnGlider\\ErnGlider_Dwemer_02.nif",
-    eg_glide_3 = "Meshes\\ErnGlider\\ErnGlider_Dwemer_02.nif",
+    eg_glide_1 = "Meshes\\ErnGlider\\ErnGlider_Dwemer_1.nif",
+    eg_glide_2 = "Meshes\\ErnGlider\\ErnGlider_Dwemer_2.nif",
+    eg_glide_3 = "Meshes\\ErnGlider\\ErnGlider_Dwemer_3.nif",
 }
 
 local function getSoundFilePath(file)
@@ -152,8 +154,8 @@ local function canApply()
         settings.debugPrint("canApply gilder: can't pay instant fatigue cost")
         return false
     end
-    if fatigueStat.current <= 0 then
-        settings.debugPrint("canApply gilder: zero fatigue")
+    if fatigueStat.current <= minFatigue then
+        settings.debugPrint("canApply gilder: min fatigue")
         return false
     end
     if (not pself.cell.isExterior) and (not pself.cell:hasTag("QuasiExterior")) then
@@ -281,6 +283,14 @@ local function onUpdate(dt)
         if fatigueDebt > 1 then
             local whole = math.floor(fatigueDebt)
             fatigueDebt = fatigueDebt - whole
+            local newFatigue = fatigueStat.current - whole
+            -- kick out of gliding if we hit min fatigue
+            -- do this so you don't fall unconscious while flying
+            if newFatigue <= minFatigue then
+                fatigueStat.current = minFatigue
+                removeGlider()
+                return
+            end
             fatigueStat.current = fatigueStat.current - whole
         end
         -- do this check less frequently

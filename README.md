@@ -20,6 +20,19 @@ Surfing only works while outside. While in an unreadied stance (your weapon is s
 
 If you're using `Ben's Skyships (OpenMW)`, you can instead just talk to a glider expert.
 
+<details>
+
+<summary>Console Commands</summary>
+
+You can enable the glider like this, too:
+
+Basic glider: `setJournalIndex eg_glider 1`
+Advanced glider: `setJournalIndex eg_glider 21`
+Masterwork glider: `setJournalIndex eg_glider 31`
+
+</details>
+
+
 ## Credits
 
 ### Sounds
