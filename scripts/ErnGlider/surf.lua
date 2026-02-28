@@ -46,6 +46,11 @@ local kickoutMinimumMomentum = 0.15
 -- prevent surfing when fatigue is at this level.
 local minFatigue = 1
 
+local pointsPerSlideSecond = 10
+local pointsPerJump = 1
+local pointsPerAirTimeSecond = 8
+local maxSpeedPointsModifier = 50
+
 local persist = {
     applied = false,
     appliedDuration = 0,
@@ -56,6 +61,12 @@ local persist = {
     currentFootPos = nil,
     slope = 0,
     sideMovement = 0,
+    points = {
+        slidePoints = 0,
+        airPoints = 0,
+        jumps = 0,
+        maxSpeed = 0,
+    },
 }
 
 local fatigueStat = pself.type.stats.dynamic.fatigue(pself)
@@ -193,7 +204,16 @@ local function canApply()
     return true
 end
 
-local function removeSurf()
+local function calcPoints(wipeout)
+    local total = persist.points.slidePoints +
+        persist.points.airPoints +
+        persist.points.jumps * pointsPerJump +
+        (persist.points.maxSpeed * persist.points.maxSpeed) * maxSpeedPointsModifier
+
+    print("Surf points: " .. total)
+end
+
+local function removeSurf(wipeout)
     if not persist.applied then
         return
     end
@@ -230,6 +250,8 @@ local function removeSurf()
         blendMask = animation.BLEND_MASK.LowerBody,
         autoDisable = true,
     })
+
+    calcPoints(wipeout)
 end
 
 local function getFootPos()
@@ -249,6 +271,14 @@ local function applySurf()
     persist.lastFootPos = getFootPos()
     persist.currentFootPos = getFootPos()
     persist.slope = 0
+
+    -- set up next run
+    persist.points = {
+        slidePoints = 0,
+        airPoints = 0,
+        jumps = 0,
+        maxSpeed = 0,
+    }
 
     print("Applying surf...")
     -- set movement on this frame
@@ -275,7 +305,7 @@ local function onHit(victimActor)
         volume = settings.main.volume,
     })
     settings.debugPrint("hit something")
-    removeSurf()
+    removeSurf(true)
     -- https://github.com/OpenMW/openmw/blob/87b266c1365696ce76fede471dd549f8184f090a/apps/openmw/mwrender/animation.cpp#L814-L828
     -- https://github.com/OpenMW/openmw/blob/87b266c1365696ce76fede471dd549f8184f090a/apps/openmw/mwmechanics/character.cpp#L219-L245
 
@@ -335,6 +365,7 @@ local function onJump()
     end
     -- we're doing a sick jump
     settings.debugPrint("trick jump!")
+    persist.points.jumps = persist.points.jumps + 1
     persist.landed = false
 end
 
@@ -444,6 +475,9 @@ local function onFrame(dt)
                 removeSurf()
                 return
             end
+            persist.points.slidePoints = persist.points.slidePoints + pointsPerSlideSecond * dt * persist.momentum
+        else
+            persist.points.airPoints = persist.points.airPoints + pointsPerAirTimeSecond * dt * persist.momentum
         end
 
         local startingYaw = pself.controls.yawChange
