@@ -36,7 +36,7 @@ local slopeDownMomentumRatio = 0.2
 -- upward slope penalty factor
 local slopeUpMomentumRatio = 0.6
 -- friction to decay momentum by
-local friction = 0.01
+local friction = 0.02
 -- how much yaw change contributes to side movement drift
 local driftFactor = 3.0
 -- side movement is multiplied by this each frame so it decays back to 0
@@ -92,6 +92,15 @@ local function getShield()
     end
     persist.activeShield = nil
     return nil
+end
+
+local function getFriction()
+    local shield = getShield()
+    if not shield then
+        return 0
+    end
+    -- light is 4-9, medium is 10-13, heavy is 14-45
+    return util.clamp(util.remap(types.Armor.records[getShield().recordId].weight, 0, 45, 0, 1), 0.1, 1) * friction
 end
 
 local function applySurfSpell()
@@ -315,7 +324,7 @@ end
 
 local conditionDebt = 0
 local rayCastDelay = 0
-
+local currentFriction = getFriction()
 
 local function onUpdate(dt)
     if dt == 0 then return end
@@ -348,6 +357,8 @@ local function onUpdate(dt)
         slideSound()
         -- hand animations
         animate()
+
+        currentFriction = getFriction()
 
         -- roll over foot positions
         persist.lastFootPos = persist.currentFootPos
@@ -407,7 +418,8 @@ end
 
 local function onFrame(dt)
     if persist.applied then
-        persist.momentum = util.clamp(persist.momentum - (friction + slopeMomentumFactor(persist.slope)) * dt, 0, 1)
+        persist.momentum = util.clamp(persist.momentum - (currentFriction + slopeMomentumFactor(persist.slope)) * dt, 0,
+            1)
         if persist.landed and (persist.momentum <= kickoutMinimumMomentum) then
             settings.debugPrint("out of momentum")
             removeSurf()
