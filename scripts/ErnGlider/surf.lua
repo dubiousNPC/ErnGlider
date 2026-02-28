@@ -43,6 +43,8 @@ local driftFactor = 3.0
 local driftDecay = 0.9
 -- if momentum drops below this, we quit surfing
 local kickoutMinimumMomentum = 0.15
+-- prevent surfing when fatigue is at this level.
+local minFatigue = 1
 
 local persist = {
     applied = false,
@@ -55,6 +57,8 @@ local persist = {
     slope = 0,
     sideMovement = 0,
 }
+
+local fatigueStat = pself.type.stats.dynamic.fatigue(pself)
 
 local surfSpell = "eg_surf_1"
 
@@ -173,6 +177,10 @@ local function canApply()
         settings.debugPrint("canApply surf: shield broken")
         return false
     end
+    if fatigueStat.current <= minFatigue then
+        settings.debugPrint("canApply surf: min fatigue")
+        return false
+    end
     return true
 end
 
@@ -205,6 +213,13 @@ local function removeSurf()
     core.sound.playSoundFile3d(sounds.land_lt, pself, {
         volume = settings.main.volume,
         loop = false,
+    })
+
+    -- ending animation
+    interfaces.AnimationController.playBlendedAnimation('jump', {
+        priority = animation.PRIORITY.Jump,
+        blendMask = animation.BLEND_MASK.LowerBody,
+        autoDisable = true,
     })
 end
 
@@ -393,7 +408,7 @@ end
 local function onFrame(dt)
     if persist.applied then
         persist.momentum = util.clamp(persist.momentum - (friction + slopeMomentumFactor(persist.slope)) * dt, 0, 1)
-        if persist.momentum <= kickoutMinimumMomentum then
+        if persist.landed and (persist.momentum <= kickoutMinimumMomentum) then
             settings.debugPrint("out of momentum")
             removeSurf()
             return
