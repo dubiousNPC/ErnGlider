@@ -301,13 +301,19 @@ local function onHit(victimActor)
 end
 
 local function slideSound()
-    if types.Actor.isOnGround(pself) and not core.sound.isSoundFilePlaying(sounds.gravel_road, pself) then
-        local vol = settings.main.volume * persist.momentum * .7
-        --settings.debugPrint("gravel sound volume: " .. tostring(vol))
-        core.sound.playSoundFile3d(sounds.gravel_road, pself, {
-            volume = vol,
-            loop = false,
-        })
+    if types.Actor.isOnGround(pself) then
+        -- restart sound if not playing
+        if not core.sound.isSoundFilePlaying(sounds.gravel_road, pself) then
+            local vol = settings.main.volume * persist.momentum * .7
+            --settings.debugPrint("gravel sound volume: " .. tostring(vol))
+            core.sound.playSoundFile3d(sounds.gravel_road, pself, {
+                volume = vol,
+                loop = false,
+            })
+        end
+    else
+        -- ensure off if in air
+        core.sound.stopSoundFile3d(sounds.gravel_road, pself)
     end
 end
 
@@ -320,6 +326,16 @@ local function animate()
             autoDisable = true,
         })
     end
+end
+
+local function onJump()
+    if not types.Actor.isOnGround(pself) then
+        removeSurf()
+        return
+    end
+    -- we're doing a sick jump
+    settings.debugPrint("trick jump!")
+    persist.landed = false
 end
 
 local conditionDebt = 0
@@ -380,10 +396,10 @@ local function onUpdate(dt)
         -- do this check less frequently
         rayCastDelay = rayCastDelay + dt
         if rayCastDelay > 0.3 then
-            settings.debugPrint("momentum: " ..
+            --[[settings.debugPrint("momentum: " ..
                 string.format("%.2f", persist.momentum) ..
                 ", slope: " ..
-                string.format("%.2f", persist.slope) .. ", side:" .. string.format("%.2f", persist.sideMovement))
+                string.format("%.2f", persist.slope) .. ", side:" .. string.format("%.2f", persist.sideMovement))]]
             local touchResult = touchingWall()
             if touchResult.hit then
                 local actor = nil
@@ -418,12 +434,16 @@ end
 
 local function onFrame(dt)
     if persist.applied then
-        persist.momentum = util.clamp(persist.momentum - (currentFriction + slopeMomentumFactor(persist.slope)) * dt, 0,
-            1)
-        if persist.landed and (persist.momentum <= kickoutMinimumMomentum) then
-            settings.debugPrint("out of momentum")
-            removeSurf()
-            return
+        -- only adjust momenum while on ground
+        if persist.landed then
+            persist.momentum = util.clamp(persist.momentum - (currentFriction + slopeMomentumFactor(persist.slope)) * dt,
+                0,
+                1)
+            if persist.landed and (persist.momentum <= kickoutMinimumMomentum) then
+                settings.debugPrint("out of momentum")
+                removeSurf()
+                return
+            end
         end
 
         local startingYaw = pself.controls.yawChange
@@ -446,6 +466,7 @@ return {
             return persist.applied
         end,
         remove = removeSurf,
+        jump = onJump,
         apply = applySurf,
     },
     engineHandlers = {

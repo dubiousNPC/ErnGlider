@@ -42,15 +42,15 @@ input.registerTriggerHandler("Jump", async:callback(
         end
 
         -- go back to normal movement?
-        local removed = false
+        local handled = false
         if interfaces.ErnGliderGlider.isApplied() then
             interfaces.ErnGliderGlider.remove()
-            removed = true
+            handled = true
         elseif interfaces.ErnGliderSurf.isApplied() then
-            interfaces.ErnGliderSurf.remove()
-            removed = true
+            interfaces.ErnGliderSurf.jump()
+            handled = true
         end
-        if removed then
+        if handled then
             return
         end
 
