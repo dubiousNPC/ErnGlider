@@ -27,9 +27,10 @@ If you're using `Ben's Skyships (OpenMW)`, you can instead just talk to a glider
 - Wind 1 Loop by jasoneweber -- https://freesound.org/s/179110/ -- License: Attribution 3.0
 - Breath In by mooncubedesign -- https://freesound.org/s/319247/ -- License: Creative Commons 0
 
-### Meshes
+### Meshes & Textures
 
 - Gliders by Semaro, used with explicit permission.
+- Textures derived from TES3: Morrowind.
 
 ## TODO
 

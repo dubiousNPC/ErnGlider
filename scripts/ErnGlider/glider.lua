@@ -33,6 +33,8 @@ local settings = require("scripts.ErnGlider.settings")
 local driftFactor = 3.0
 -- side movement is multiplied by this each frame so it decays back to 0
 local driftDecay = 0.9
+-- bone to attach glider to
+local gliderBone = "Neck"
 
 local persist = {
     applied = false,
@@ -62,9 +64,9 @@ local glideSpells = {
     eg_glide_3 = "eg_glide_3",
 }
 local glideVFX = {
-    eg_glide_1 = "meshes\\a\\a_dreugh_helm.nif",
-    eg_glide_2 = "meshes\\a\\a_bonemold_chuzei_helmet.nif",
-    eg_glide_3 = "meshes\\a\\a_dustadept_helm.nif",
+    eg_glide_1 = "Meshes\\ErnGlider\\ErnGlider_Dwemer_01.nif",
+    eg_glide_2 = "Meshes\\ErnGlider\\ErnGlider_Dwemer_02.nif",
+    eg_glide_3 = "Meshes\\ErnGlider\\ErnGlider_Dwemer_02.nif",
 }
 
 local function getSoundFilePath(file)
@@ -87,7 +89,7 @@ local function applyGlideSpell(currentGlider)
         ignoreSpellAbsorption = true,
         ignoreReflect = true
     })
-    animation.addVfx(pself, vfx, { loop = true, boneName = "Head", vfxId = "glider" })
+    animation.addVfx(pself, vfx, { loop = true, boneName = gliderBone, vfxId = "glider", useAmbientLight = false })
 end
 
 local forward = util.vector3(0.0, 1.0, 0.0)
@@ -146,8 +148,12 @@ local function canApply()
         settings.debugPrint("canApply gilder: levitating")
         return false
     end
-    if fatigueStat.current < instantCost() then
+    if (not persist.applied) and (fatigueStat.current < instantCost()) then
         settings.debugPrint("canApply gilder: can't pay instant fatigue cost")
+        return false
+    end
+    if fatigueStat.current <= 0 then
+        settings.debugPrint("canApply gilder: zero fatigue")
         return false
     end
     if (not pself.cell.isExterior) and (not pself.cell:hasTag("QuasiExterior")) then
@@ -193,6 +199,8 @@ local function removeGlider()
     core.sound.stopSoundFile3d(sounds.wind, pself)
 end
 
+local fatigueDebt = 0
+
 local function applyGlider()
     if not canApply() then
         return
@@ -221,6 +229,8 @@ local function applyGlider()
     -- apply initial cost
     local cost = instantCost()
     fatigueStat.current = fatigueStat.current - cost
+    -- bank up some of that cost.
+    fatigueDebt = -0.8 * cost
 end
 
 local function onHit(victimActor)
@@ -253,7 +263,6 @@ local function onHit(victimActor)
     end
 end
 
-local fatigueDebt = 0
 local rayCastDelay = 0
 
 local function onUpdate(dt)
@@ -289,8 +298,6 @@ local function onUpdate(dt)
         end
         -- track duration of glide
         persist.appliedDuration = persist.appliedDuration + dt
-    else
-        fatigueDebt = 0
     end
 end
 

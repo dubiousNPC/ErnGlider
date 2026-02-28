@@ -94,7 +94,7 @@ local function applySurfSpell()
         ignoreSpellAbsorption = true,
         ignoreReflect = true
     })
-    animation.addVfx(pself, shieldModel, { loop = true, boneName = "Left Foot", vfxId = "surf" })
+    animation.addVfx(pself, shieldModel, { loop = true, boneName = "Left Foot", vfxId = "surf", useAmbientLight = false })
 
     -- this should be re-applied often if it is not playing or something.
     --[[

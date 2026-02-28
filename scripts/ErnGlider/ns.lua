@@ -20,11 +20,16 @@ return "ErnGlider"
 --[[
 Quest: EG_Glider
 1 - obtained basic glider from glider expert or Acrobat
-20 - talk with glider expert or Savant to get advanced plans
+20 - talked with glider expert or Savant to get advanced plans
 21 - purchased upgrade from smith
-30 - talk with glider expert or Savant to get masterwork plans
+30 - talked with glider expert or Savant to get masterwork plans
 31 - purchased final upgrade from smith
 
 Topic: glider
 
+Local variable: eg_glider_expert
+
+Items:
+- eg_basicglider_plan
+- eg_masterglider_plan
 ]]
