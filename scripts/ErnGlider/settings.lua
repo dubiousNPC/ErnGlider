@@ -69,6 +69,18 @@ local function init()
                 }
             },
             {
+                key = "deadzone",
+                name = "deadzoneName",
+                description = "deadzoneDescription",
+                default = 0.1,
+                renderer = "number",
+                argument = {
+                    integer = false,
+                    min = 0,
+                    max = 1
+                }
+            },
+            {
                 key = "volume",
                 name = "volumeName",
                 description = "volumeDescription",

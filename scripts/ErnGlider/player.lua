@@ -29,7 +29,6 @@ local animation = require('openmw.animation')
 local interfaces = require("openmw.interfaces")
 local settings = require("scripts.ErnGlider.settings")
 
-local epsilon = 0.005
 
 input.registerTriggerHandler("Jump", async:callback(
     function()
@@ -52,10 +51,13 @@ input.registerTriggerHandler("Jump", async:callback(
 
         -- apply special movement
         if animation.isPlaying(pself, "jump") then
-            if pself.controls.movement > epsilon then
-                interfaces.ErnGliderGlider.apply()
-            elseif pself.controls.movement < -1 * epsilon then
+            if pself.controls.movement > settings.main.deadzone then
+                -- no forward movement action on purpose.
+                -- people like bunny hopping.
+            elseif pself.controls.movement < -1 * settings.main.deadzone then
                 interfaces.ErnGliderSurf.apply()
+            else
+                interfaces.ErnGliderGlider.apply()
             end
         end
     end

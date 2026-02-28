@@ -29,9 +29,15 @@ local animation = require('openmw.animation')
 local interfaces = require("openmw.interfaces")
 local settings = require("scripts.ErnGlider.settings")
 
+-- how much yaw change contributes to side movement drift
+local driftFactor = 3.0
+-- side movement is multiplied by this each frame so it decays back to 0
+local driftDecay = 0.9
+
 local persist = {
     applied = false,
     appliedDuration = 0,
+    sideMovement = 0,
 }
 
 pself.type.addTopic(pself, "glider")
@@ -171,6 +177,7 @@ local function removeGlider()
     end
     persist.applied = false
     persist.appliedDuration = 0
+    persist.sideMovement = 0
     print("Removing glider...")
     -- reset movement
     pself.controls.movement = 0
@@ -290,6 +297,12 @@ end
 local function onFrame()
     if persist.applied then
         pself.controls.movement = 1
+        local startingYaw = pself.controls.yawChange
+        if math.abs(startingYaw) < 0.05 then
+            startingYaw = 0
+        end
+        persist.sideMovement = util.clamp((persist.sideMovement + startingYaw * driftFactor) * driftDecay, -1, 1)
+        pself.controls.sideMovement = (persist.sideMovement + persist.sideMovement) / 2
     end
 end
 

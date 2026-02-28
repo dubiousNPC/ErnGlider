@@ -29,7 +29,19 @@ local animation = require('openmw.animation')
 local interfaces = require("openmw.interfaces")
 local settings = require("scripts.ErnGlider.settings")
 
-local startMomentum = 2
+-- initial momentum when starting surf
+local startMomentum = 0.2
+-- downward slope bonus factor
+local slopeDownMomentumRatio = 0.2
+-- upward slope penalty factor
+local slopeUpMomentumRatio = 0.6
+-- how much yaw change contributes to side movement drift
+local driftFactor = 3.0
+-- side movement is multiplied by this each frame so it decays back to 0
+local driftDecay = 0.9
+-- if momentum drops below this, we quit surfing
+local kickoutMinimumMomentum = 0.15
+
 local persist = {
     applied = false,
     appliedDuration = 0,
@@ -38,7 +50,8 @@ local persist = {
     landed = false,
     lastFootPos = nil,
     currentFootPos = nil,
-    slope = 0
+    slope = 0,
+    sideMovement = 0,
 }
 
 local surfSpell = "eg_surf_1"
@@ -76,12 +89,29 @@ local function applySurfSpell()
     local shieldModel = types.Armor.records[getShield().recordId].model
     pself.type.activeSpells(pself):add({
         id = surfSpell,
-        effects = { 0, 1 },
+        effects = { 0, 1, 2 },
         ignoreResistances = true,
         ignoreSpellAbsorption = true,
         ignoreReflect = true
     })
     animation.addVfx(pself, shieldModel, { loop = true, boneName = "Left Foot", vfxId = "surf" })
+
+    -- this should be re-applied often if it is not playing or something.
+    --[[
+    interfaces.AnimationController.playBlendedAnimation('sneakforward', {
+        priority = animation.PRIORITY.Storm,
+        blendMask = animation.BLEND_MASK.UpperBody,
+        autoDisable = false,
+    })]]
+
+    -- This actually prevents movement!
+    --[[
+    interfaces.AnimationController.playBlendedAnimation('idlesneak', {
+        priority = animation.PRIORITY.Storm,
+        blendMask = animation.BLEND_MASK.LowerBody,
+        autoDisable = true,
+    })
+    ]]
 end
 
 local forward = util.vector3(0.0, 1.0, 0.0)
@@ -107,6 +137,9 @@ local function onLoad(data)
     if data ~= nil then
         persist = data
     end
+    if data.sideMovement == nil then
+        data.sideMovement = 0
+    end
 end
 local function onSave()
     return persist
@@ -120,10 +153,6 @@ local function canApply()
     local levitateEffect = types.Actor.activeEffects(pself):getEffect(core.magic.EFFECT_TYPE.Levitate)
     if (levitateEffect ~= nil) and (levitateEffect.magnitude > 0) then
         settings.debugPrint("canApply surf: levitating")
-        return false
-    end
-    if (not pself.cell.isExterior) and (not pself.cell:hasTag("QuasiExterior")) then
-        settings.debugPrint("canApply surf: interior cell")
         return false
     end
     if not types.Player.getControlSwitch(pself, types.Player.CONTROL_SWITCH.Controls) then
@@ -151,6 +180,7 @@ local function removeSurf()
     persist.appliedDuration = 0
     print("Removing surf...")
     -- reset movement
+    persist.sideMovement = 0
     pself.controls.movement = 0
     -- todo: this will probably be bad
     pself.controls.run = false
@@ -275,7 +305,10 @@ local function onUpdate(dt)
         -- do this check less frequently
         rayCastDelay = rayCastDelay + dt
         if rayCastDelay > 0.3 then
-            settings.debugPrint("momentum: " .. persist.momentum .. ", slope: " .. persist.slope)
+            settings.debugPrint("momentum: " ..
+                string.format("%.2f", persist.momentum) ..
+                ", slope: " ..
+                string.format("%.2f", persist.slope) .. ", side:" .. string.format("%.2f", persist.sideMovement))
             local touchResult = touchingWall()
             if touchResult.hit then
                 local actor = nil
@@ -293,16 +326,38 @@ local function onUpdate(dt)
     end
 end
 
+local function quadraticEaseOut(x)
+    return 1 - (1 - x) * (1 - x)
+end
+
+local function slopeMomentumFactor(slope)
+    slope = util.clamp(slope, -1, 1)
+    if slope > 0 then
+        -- quadratic ease-in when going uphill
+        return slopeUpMomentumRatio * slope * slope
+    else
+        -- quadratic ease-out when going downhill
+        return slopeDownMomentumRatio * quadraticEaseOut(slope)
+    end
+end
+
 local function onFrame(dt)
     if persist.applied then
-        persist.momentum = util.clamp(persist.momentum - persist.slope * dt, 0, 1)
-        if persist.momentum <= 0 then
+        persist.momentum = util.clamp(persist.momentum - slopeMomentumFactor(persist.slope) * dt, 0, 1)
+        if persist.momentum <= kickoutMinimumMomentum then
             settings.debugPrint("out of momentum")
             removeSurf()
             return
         end
-        pself.controls.sideMovement = 0
-        pself.controls.movement = persist.momentum
+
+        local startingYaw = pself.controls.yawChange
+        if math.abs(startingYaw) < 0.05 then
+            startingYaw = 0
+        end
+        persist.sideMovement = util.clamp((persist.sideMovement + startingYaw * driftFactor) * driftDecay, -1, 1)
+        --settings.debugPrint("sidemovement: " .. tostring(persist.sideMovement))
+        pself.controls.sideMovement = persist.sideMovement
+        pself.controls.movement = util.clamp(persist.momentum - math.abs(persist.sideMovement), 0, 1)
         pself.controls.run = true
     end
 end
