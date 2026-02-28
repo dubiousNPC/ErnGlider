@@ -78,7 +78,7 @@ end
 local sounds = {
     wind = getSoundFilePath("wind.mp3"),
     breath_in = getSoundFilePath("breath_in.mp3"),
-    hit_wall = "Sound\\Fx\\FOOT\\land_lt.wav"
+    hit_wall = "Sound\\Fx\\body hit.wav"
 }
 
 local function applyGlideSpell(currentGlider)
