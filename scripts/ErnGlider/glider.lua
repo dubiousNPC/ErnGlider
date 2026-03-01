@@ -37,6 +37,7 @@ local driftDecay = 0.9
 local gliderBone = "Neck"
 -- prevent gliding when fatigue is at this level.
 local minFatigue = 1
+local gliderAnimation = "glideridle"
 
 local persist = {
     applied = false,
@@ -199,6 +200,7 @@ local function removeGlider()
     animation.removeVfx(pself, "glider")
     -- remove sound
     core.sound.stopSoundFile3d(sounds.wind, pself)
+    animation.cancel(pself, gliderAnimation)
 end
 
 local fatigueDebt = 0
@@ -233,6 +235,17 @@ local function applyGlider()
     fatigueStat.current = fatigueStat.current - cost
     -- bank up some of that cost.
     fatigueDebt = -0.8 * cost
+end
+
+local function animate()
+    if types.Actor.isOnGround(pself) and not animation.isPlaying(pself, gliderAnimation) then
+        settings.debugPrint("start hand loop")
+        interfaces.AnimationController.playBlendedAnimation(gliderAnimation, {
+            priority = animation.PRIORITY.Storm,
+            blendMask = animation.BLEND_MASK.UpperBody,
+            autoDisable = true,
+        })
+    end
 end
 
 local function onHit(victimActor)
@@ -306,6 +319,8 @@ local function onUpdate(dt)
                 return
             end
         end
+        -- put hands up
+        animate()
         -- track duration of glide
         persist.appliedDuration = persist.appliedDuration + dt
     end

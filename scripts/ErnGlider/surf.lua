@@ -214,6 +214,7 @@ local function calcPoints(wipeout)
     end
 
     print("Surf points: " .. total)
+    return total
 end
 
 local function removeSurf(wipeout)
@@ -255,6 +256,7 @@ local function removeSurf(wipeout)
     })
 
     calcPoints(wipeout)
+    animation.cancel(pself, 'sneakforward')
 end
 
 local function getFootPos()
