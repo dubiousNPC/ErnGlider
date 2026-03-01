@@ -37,7 +37,10 @@ local driftDecay = 0.9
 local gliderBone = "Neck"
 -- prevent gliding when fatigue is at this level.
 local minFatigue = 1
-local gliderAnimation = "GliderIdle.002"
+
+-- specify glider animation. set to nil to use jump anim
+local gliderAnimation = "GliderIdle"
+--local gliderAnimation = nil
 
 local persist = {
     applied = false,
@@ -142,9 +145,13 @@ local function canApply()
         settings.debugPrint("canApply gilder: spell or weapon is readied")
         return false
     end
+
     if not animation.isPlaying(pself, "jump") then
-        settings.debugPrint("canApply gilder: not jumping")
-        return false
+        local isGlidingAnimPlaying = gliderAnimation and animation.isPlaying(pself, gliderAnimation) or true
+        if not isGlidingAnimPlaying then
+            settings.debugPrint("canApply gilder: not jumping")
+            return false
+        end
     end
     local levitateEffect = types.Actor.activeEffects(pself):getEffect(core.magic.EFFECT_TYPE.Levitate)
     if (levitateEffect ~= nil) and (levitateEffect.magnitude > 0) then
@@ -200,7 +207,9 @@ local function removeGlider()
     animation.removeVfx(pself, "glider")
     -- remove sound
     core.sound.stopSoundFile3d(sounds.wind, pself)
-    animation.cancel(pself, gliderAnimation)
+    if gliderAnimation then
+        animation.cancel(pself, gliderAnimation)
+    end
 end
 
 local fatigueDebt = 0
@@ -238,12 +247,17 @@ local function applyGlider()
 end
 
 local function animate()
+    if not gliderAnimation then
+        return
+    end
+    animation.cancel(pself, "jump")
     if not animation.isPlaying(pself, gliderAnimation) then
-        settings.debugPrint("start hand loop " .. tostring(gliderAnimation))
-        interfaces.AnimationController.playBlendedAnimation(gliderAnimation, {
+        --settings.debugPrint("start hand loop " .. tostring(gliderAnimation))
+        animation.playBlended(pself, gliderAnimation, {
             priority = animation.PRIORITY.Storm,
-            blendMask = animation.BLEND_MASK.UpperBody,
-            autoDisable = true,
+            --blendMask = animation.BLEND_MASK.UpperBody,
+            --autoDisable = true,
+            loops = -1,
         })
     end
 end
