@@ -38,9 +38,13 @@ local gliderBone = "Neck"
 -- prevent gliding when fatigue is at this level.
 local minFatigue = 1
 
--- specify glider animation. set to nil to use jump anim
+--- specify glider animation.
+--- dubious: swap this to GliderIdle from "levitateforward" if you are testing
+---@type string?
 local gliderAnimation = "levitateforward"
---local gliderAnimation = nil
+if gliderAnimation == "" then
+    gliderAnimation = nil
+end
 
 local persist = {
     applied = false,
