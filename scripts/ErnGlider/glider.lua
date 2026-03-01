@@ -37,7 +37,7 @@ local driftDecay = 0.9
 local gliderBone = "Neck"
 -- prevent gliding when fatigue is at this level.
 local minFatigue = 1
-local gliderAnimation = "glideridle"
+local gliderAnimation = "GliderIdle.002"
 
 local persist = {
     applied = false,
@@ -238,8 +238,8 @@ local function applyGlider()
 end
 
 local function animate()
-    if types.Actor.isOnGround(pself) and not animation.isPlaying(pself, gliderAnimation) then
-        settings.debugPrint("start hand loop")
+    if not animation.isPlaying(pself, gliderAnimation) then
+        settings.debugPrint("start hand loop " .. tostring(gliderAnimation))
         interfaces.AnimationController.playBlendedAnimation(gliderAnimation, {
             priority = animation.PRIORITY.Storm,
             blendMask = animation.BLEND_MASK.UpperBody,
