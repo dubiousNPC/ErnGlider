@@ -254,7 +254,6 @@ local function animate()
     if not gliderAnimation then
         return
     end
-    animation.cancel(pself, "jump")
     if not animation.isPlaying(pself, gliderAnimation) then
         --settings.debugPrint("start hand loop " .. tostring(gliderAnimation))
         animation.playBlended(pself, gliderAnimation, {
