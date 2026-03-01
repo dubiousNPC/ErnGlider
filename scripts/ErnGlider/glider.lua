@@ -39,7 +39,7 @@ local gliderBone = "Neck"
 local minFatigue = 1
 
 -- specify glider animation. set to nil to use jump anim
-local gliderAnimation = "GliderIdle"
+local gliderAnimation = "levitateforward"
 --local gliderAnimation = nil
 
 local persist = {

@@ -54,6 +54,11 @@ Masterwork glider: `setJournalIndex eg_glider 31`
 - Gliders by Semaro, used with explicit permission.
 - Textures derived from TES3: Morrowind.
 
+## Animations
+
+- openmw-animated-levitation -- https://gitlab.com/fallchildren/openmw-animated-levitation -- GPL
+- glider by Dubious, used with explicit permission.
+
 ### Third-Party Code
 
 - openmw-animated-levitation -- https://gitlab.com/fallchildren/openmw-animated-levitation -- GPL
