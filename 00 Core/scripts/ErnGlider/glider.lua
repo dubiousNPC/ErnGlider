@@ -271,9 +271,28 @@ local function applyGlider()
 end
 
 local function animate()
-    if not gliderAnimationIsPlaying() then
-        -- TODO: left/right
-        animation.playBlended(pself, glideranim[cachedCurrentGlider].forward, {
+    local aLeft = glideranim[cachedCurrentGlider].left
+    local aRight = glideranim[cachedCurrentGlider].right
+    local aForward = glideranim[cachedCurrentGlider].forward
+    if (pself.controls.sideMovement <= -1 * settings.main.deadzone) and not animation.isPlaying(pself, aLeft) then
+        settings.debugPrint("anim start left - " .. aLeft)
+        animation.playBlended(pself, aLeft, {
+            priority = animation.PRIORITY.Storm,
+            --blendMask = animation.BLEND_MASK.UpperBody,
+            --autoDisable = true,
+            loops = -1,
+        })
+    elseif (pself.controls.sideMovement >= settings.main.deadzone) and not animation.isPlaying(pself, aRight) then
+        settings.debugPrint("anim start right - " .. aRight)
+        animation.playBlended(pself, aRight, {
+            priority = animation.PRIORITY.Storm,
+            --blendMask = animation.BLEND_MASK.UpperBody,
+            --autoDisable = true,
+            loops = -1,
+        })
+    elseif (math.abs(pself.controls.sideMovement) < settings.main.deadzone) and not animation.isPlaying(pself, aForward) then
+        settings.debugPrint("anim start forward - " .. aForward)
+        animation.playBlended(pself, aForward, {
             priority = animation.PRIORITY.Storm,
             --blendMask = animation.BLEND_MASK.UpperBody,
             --autoDisable = true,
