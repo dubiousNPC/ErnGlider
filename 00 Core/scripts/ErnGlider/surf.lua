@@ -46,6 +46,12 @@ local kickoutMinimumMomentum = 0.15
 -- prevent surfing when fatigue is at this level.
 local minFatigue = 1
 
+local surfAnimations = {
+    forward = "sneakforward",
+    left = "sneakleft",
+    right = "sneakright"
+}
+
 local pointsPerSlideSecond = 10
 local pointsPerJump = 1
 local pointsPerAirTimeSecond = 8
@@ -352,13 +358,54 @@ local function slideSound()
     end
 end
 
-local function animate()
+local function animate2()
     if types.Actor.isOnGround(pself) and not animation.isPlaying(pself, 'sneakforward') then
         settings.debugPrint("start hand loop")
         interfaces.AnimationController.playBlendedAnimation('sneakforward', {
             priority = animation.PRIORITY.Storm,
             blendMask = animation.BLEND_MASK.UpperBody,
             autoDisable = true,
+        })
+    end
+end
+
+local function animate()
+    if not types.Actor.isOnGround(pself) then
+        -- cancel these anims, which should let Jump animation take precedence
+        animation.cancel(pself, surfAnimations.forward)
+        animation.cancel(pself, surfAnimations.right)
+        animation.cancel(pself, surfAnimations.left)
+        return
+    end
+
+    local speed = 1
+
+    if (pself.controls.sideMovement <= -1 * settings.main.deadzone) and not animation.isPlaying(pself, surfAnimations.left) then
+        settings.debugPrint("anim start left - " .. surfAnimations.left)
+        animation.playBlended(pself, surfAnimations.left, {
+            priority = animation.PRIORITY.Storm,
+            blendMask = animation.BLEND_MASK.UpperBody,
+            --autoDisable = true,
+            loops = -1,
+            speed = speed,
+        })
+    elseif (pself.controls.sideMovement >= settings.main.deadzone) and not animation.isPlaying(pself, surfAnimations.right) then
+        settings.debugPrint("anim start right - " .. surfAnimations.right)
+        animation.playBlended(pself, surfAnimations.right, {
+            priority = animation.PRIORITY.Storm,
+            blendMask = animation.BLEND_MASK.UpperBody,
+            --autoDisable = true,
+            loops = -1,
+            speed = speed,
+        })
+    elseif (math.abs(pself.controls.sideMovement) < settings.main.deadzone) and not animation.isPlaying(pself, surfAnimations.forward) then
+        settings.debugPrint("anim start forward - " .. surfAnimations.forward)
+        animation.playBlended(pself, surfAnimations.forward, {
+            priority = animation.PRIORITY.Storm,
+            blendMask = animation.BLEND_MASK.UpperBody,
+            --autoDisable = true,
+            loops = -1,
+            speed = speed,
         })
     end
 end
