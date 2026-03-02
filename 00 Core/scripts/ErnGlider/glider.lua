@@ -15,36 +15,30 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]
-local MOD_NAME = require("scripts.ErnGlider.ns")
-local core = require("openmw.core")
-local pself = require("openmw.self")
-local camera = require('openmw.camera')
-local util = require('openmw.util')
-local async = require("openmw.async")
-local types = require('openmw.types')
-local input = require('openmw.input')
-local controls = require('openmw.interfaces').Controls
-local nearby = require('openmw.nearby')
-local animation = require('openmw.animation')
-local interfaces = require("openmw.interfaces")
-local settings = require("scripts.ErnGlider.settings")
+local MOD_NAME    = require("scripts.ErnGlider.ns")
+local core        = require("openmw.core")
+local pself       = require("openmw.self")
+local camera      = require('openmw.camera')
+local util        = require('openmw.util')
+local async       = require("openmw.async")
+local types       = require('openmw.types')
+local input       = require('openmw.input')
+local controls    = require('openmw.interfaces').Controls
+local nearby      = require('openmw.nearby')
+local animation   = require('openmw.animation')
+local aux_util    = require('openmw_aux.util')
+local interfaces  = require("openmw.interfaces")
+local settings    = require("scripts.ErnGlider.settings")
+
+local glideranim  = require("scripts.ErnGlider.glideranim")
 
 -- how much yaw change contributes to side movement drift
 local driftFactor = 3.0
 -- side movement is multiplied by this each frame so it decays back to 0
-local driftDecay = 0.9
--- bone to attach glider to
-local gliderBone = "Neck"
+local driftDecay  = 0.9
 -- prevent gliding when fatigue is at this level.
-local minFatigue = 1
+local minFatigue  = 1
 
---- specify glider animation.
---- dubious: swap this to GliderIdle from "levitateforward" if you are testing
----@type string?
-local gliderAnimation = "levitateforward"
-if gliderAnimation == "" then
-    gliderAnimation = nil
-end
 
 local persist = {
     applied = false,
@@ -54,30 +48,46 @@ local persist = {
 
 pself.type.addTopic(pself, "glider")
 
+local cachedCurrentGlider = "basic"
 local function getCurrentGlider()
     local gliderQuest = pself.type.quests(pself)["eg_glider"]
     local gliderStage = gliderQuest and gliderQuest.stage or 0
     if gliderStage >= 31 then
-        return "eg_glide_3"
+        cachedCurrentGlider = "masterwork"
+        return cachedCurrentGlider
     elseif gliderStage >= 21 then
-        return "eg_glide_2"
+        cachedCurrentGlider = "advanced"
+        return cachedCurrentGlider
     elseif gliderStage >= 1 then
-        return "eg_glide_1"
+        cachedCurrentGlider = "basic"
+        return cachedCurrentGlider
     else
         return nil
     end
 end
 
 local glideSpells = {
-    eg_glide_1 = "eg_glide_1",
-    eg_glide_2 = "eg_glide_2",
-    eg_glide_3 = "eg_glide_3",
+    basic = "eg_glide_1",
+    advanced = "eg_glide_2",
+    masterwork = "eg_glide_3",
 }
-local glideVFX = {
-    eg_glide_1 = "Meshes\\ErnGlider\\ErnGlider_Dwemer_1.nif",
-    eg_glide_2 = "Meshes\\ErnGlider\\ErnGlider_Dwemer_2.nif",
-    eg_glide_3 = "Meshes\\ErnGlider\\ErnGlider_Dwemer_3.nif",
-}
+
+local allGliderAnimations = {}
+for _, gliderType in pairs(glideranim) do
+    allGliderAnimations[gliderType.forward] = true
+    allGliderAnimations[gliderType.left] = true
+    allGliderAnimations[gliderType.right] = true
+end
+local function gliderAnimationIsPlaying()
+    for animName, present in pairs(allGliderAnimations) do
+        if present then
+            if animation.isPlaying(pself, animName) then
+                return true
+            end
+        end
+    end
+    return false
+end
 
 local function getSoundFilePath(file)
     return "sound\\" .. MOD_NAME .. "\\" .. file
@@ -91,7 +101,7 @@ local sounds = {
 
 local function applyGlideSpell(currentGlider)
     local spell = glideSpells[currentGlider]
-    local vfx = glideVFX[currentGlider]
+    local vfx = glideranim[currentGlider].model
     pself.type.activeSpells(pself):add({
         id = spell,
         effects = { 0, 1 },
@@ -99,7 +109,10 @@ local function applyGlideSpell(currentGlider)
         ignoreSpellAbsorption = true,
         ignoreReflect = true
     })
-    animation.addVfx(pself, vfx, { loop = true, boneName = gliderBone, vfxId = "glider", useAmbientLight = false })
+    if vfx then
+        animation.addVfx(pself, vfx,
+            { loop = true, boneName = glideranim[cachedCurrentGlider].bone, vfxId = "glider", useAmbientLight = false })
+    end
 end
 
 local forward = util.vector3(0.0, 1.0, 0.0)
@@ -151,8 +164,7 @@ local function canApply()
     end
 
     if not animation.isPlaying(pself, "jump") then
-        local isGlidingAnimPlaying = gliderAnimation and animation.isPlaying(pself, gliderAnimation) or true
-        if not isGlidingAnimPlaying then
+        if not gliderAnimationIsPlaying() then
             settings.debugPrint("canApply gilder: not jumping")
             return false
         end
@@ -202,8 +214,12 @@ local function removeGlider()
     -- reset movement
     pself.controls.movement = 0
     -- remove spell effects
+    local gliderSpellsByID = {}
+    for _, v in pairs(glideSpells) do
+        gliderSpellsByID[v] = true
+    end
     for _, spell in pairs(pself.type.activeSpells(pself)) do
-        if glideSpells[spell.id] then
+        if gliderSpellsByID[spell.id] then
             pself.type.activeSpells(pself):remove(spell.activeSpellId)
         end
     end
@@ -211,8 +227,12 @@ local function removeGlider()
     animation.removeVfx(pself, "glider")
     -- remove sound
     core.sound.stopSoundFile3d(sounds.wind, pself)
-    if gliderAnimation then
-        animation.cancel(pself, gliderAnimation)
+    -- remove all possible glider anims
+    settings.debugPrint(aux_util.deepToString(allGliderAnimations, 3))
+    for animName, present in pairs(allGliderAnimations) do
+        if present then
+            animation.cancel(pself, animName)
+        end
     end
 end
 
@@ -251,12 +271,9 @@ local function applyGlider()
 end
 
 local function animate()
-    if not gliderAnimation then
-        return
-    end
-    if not animation.isPlaying(pself, gliderAnimation) then
-        --settings.debugPrint("start hand loop " .. tostring(gliderAnimation))
-        animation.playBlended(pself, gliderAnimation, {
+    if not gliderAnimationIsPlaying() then
+        -- TODO: left/right
+        animation.playBlended(pself, glideranim[cachedCurrentGlider].forward, {
             priority = animation.PRIORITY.Storm,
             --blendMask = animation.BLEND_MASK.UpperBody,
             --autoDisable = true,
