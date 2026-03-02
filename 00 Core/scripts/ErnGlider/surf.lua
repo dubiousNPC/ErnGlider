@@ -15,49 +15,50 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]
-local MOD_NAME = require("scripts.ErnGlider.ns")
-local core = require("openmw.core")
-local pself = require("openmw.self")
-local camera = require('openmw.camera')
-local util = require('openmw.util')
-local async = require("openmw.async")
-local types = require('openmw.types')
-local input = require('openmw.input')
-local controls = require('openmw.interfaces').Controls
-local nearby = require('openmw.nearby')
-local animation = require('openmw.animation')
-local interfaces = require("openmw.interfaces")
-local settings = require("scripts.ErnGlider.settings")
+local MOD_NAME               = require("scripts.ErnGlider.ns")
+local core                   = require("openmw.core")
+local pself                  = require("openmw.self")
+local camera                 = require('openmw.camera')
+local util                   = require('openmw.util')
+local aux_util               = require('openmw_aux.util')
+local async                  = require("openmw.async")
+local types                  = require('openmw.types')
+local input                  = require('openmw.input')
+local controls               = require('openmw.interfaces').Controls
+local nearby                 = require('openmw.nearby')
+local animation              = require('openmw.animation')
+local interfaces             = require("openmw.interfaces")
+local settings               = require("scripts.ErnGlider.settings")
 
 -- initial momentum when starting surf
-local startMomentum = 0.2
+local startMomentum          = 0.2
 -- downward slope bonus factor
 local slopeDownMomentumRatio = 0.2
 -- upward slope penalty factor
-local slopeUpMomentumRatio = 0.6
+local slopeUpMomentumRatio   = 0.6
 -- friction to decay momentum by
-local friction = 0.02
+local friction               = 0.01
 -- how much yaw change contributes to side movement drift
-local driftFactor = 3.0
+local driftFactor            = 3.0
 -- side movement is multiplied by this each frame so it decays back to 0
-local driftDecay = 0.9
+local driftDecay             = 0.9
 -- if momentum drops below this, we quit surfing
 local kickoutMinimumMomentum = 0.15
 -- prevent surfing when fatigue is at this level.
-local minFatigue = 1
+local minFatigue             = 1
 
-local surfAnimations = {
+local surfAnimations         = {
     forward = "sneakforward",
     left = "sneakleft",
     right = "sneakright"
 }
 
-local pointsPerSlideSecond = 10
-local pointsPerJump = 1
+local pointsPerSlideSecond   = 10
+local pointsPerJump          = 1
 local pointsPerAirTimeSecond = 8
 local maxSpeedPointsModifier = 50
 
-local persist = {
+local persist                = {
     applied = false,
     appliedDuration = 0,
     momentum = startMomentum,
@@ -75,9 +76,32 @@ local persist = {
     },
 }
 
-local fatigueStat = pself.type.stats.dynamic.fatigue(pself)
+local fatigueStat            = pself.type.stats.dynamic.fatigue(pself)
 
-local surfSpell = "eg_surf_1"
+local surfSpell              = "eg_surf_1"
+local surfShieldWeightSpells = {
+    light = {
+        id = "eg_surf_light",
+        effects = { 0, 1 },
+        ignoreResistances = true,
+        ignoreSpellAbsorption = true,
+        ignoreReflect = true
+    },
+    medium = {
+        id = "eg_surf_medium",
+        effects = { 0 },
+        ignoreResistances = true,
+        ignoreSpellAbsorption = true,
+        ignoreReflect = true
+    },
+    heavy = {
+        id = "eg_surf_heavy",
+        effects = { 0 },
+        ignoreResistances = true,
+        ignoreSpellAbsorption = true,
+        ignoreReflect = true
+    }
+}
 
 local function getSoundFilePath(file)
     return "sound\\" .. MOD_NAME .. "\\" .. file
@@ -111,13 +135,16 @@ local function getShield()
     return nil
 end
 
-local function getFriction()
-    local shield = getShield()
-    if not shield then
-        return 0
-    end
+local function getSurfWeightSpell()
+    local weight = types.Armor.records[getShield().recordId].weight
     -- light is 4-9, medium is 10-13, heavy is 14-45
-    return util.clamp(util.remap(types.Armor.records[getShield().recordId].weight, 0, 45, 0, 1), 0.1, 1) * friction
+    if weight < 10 then
+        return surfShieldWeightSpells.light
+    elseif weight < 14 then
+        return surfShieldWeightSpells.medium
+    else
+        return surfShieldWeightSpells.heavy
+    end
 end
 
 local function applySurfSpell()
@@ -129,6 +156,7 @@ local function applySurfSpell()
         ignoreSpellAbsorption = true,
         ignoreReflect = true
     })
+    pself.type.activeSpells(pself):add(getSurfWeightSpell())
     animation.addVfx(pself, shieldModel, { loop = true, boneName = "Left Foot", vfxId = "surf", useAmbientLight = false })
 
     -- this should be re-applied often if it is not playing or something.
@@ -238,8 +266,16 @@ local function removeSurf(wipeout)
     -- todo: this will probably be bad
     pself.controls.run = false
     -- remove spell effects
+    local spellsToRemove = {
+        [surfSpell] = true,
+        [surfShieldWeightSpells.light.id] = true,
+        [surfShieldWeightSpells.medium.id] = true,
+        [surfShieldWeightSpells.heavy.id] = true
+    }
+    settings.debugPrint(aux_util.deepToString(spellsToRemove, 3))
     for _, spell in pairs(pself.type.activeSpells(pself)) do
-        if spell.id == surfSpell then
+        print("checking" .. spell.id)
+        if spellsToRemove[spell.id] then
             pself.type.activeSpells(pself):remove(spell.activeSpellId)
         end
     end
@@ -275,6 +311,7 @@ local function applySurf()
         return
     end
 
+    persist.activeShield = nil
     persist.applied = true
     persist.momentum = startMomentum
     persist.landed = false
@@ -358,17 +395,13 @@ local function slideSound()
     end
 end
 
-local function animate2()
-    if types.Actor.isOnGround(pself) and not animation.isPlaying(pself, 'sneakforward') then
-        settings.debugPrint("start hand loop")
-        interfaces.AnimationController.playBlendedAnimation('sneakforward', {
-            priority = animation.PRIORITY.Storm,
-            blendMask = animation.BLEND_MASK.UpperBody,
-            autoDisable = true,
-        })
-    end
-end
-
+local armsAnimationOptions = {
+    priority = animation.PRIORITY.Storm,
+    --blendMask = util.bitOr(animation.BLEND_MASK.LeftArm, animation.BLEND_MASK.RightArm),
+    blendMask = animation.BLEND_MASK.UpperBody,
+    loops = -1,
+    speed = 1,
+}
 local function animate()
     if not types.Actor.isOnGround(pself) then
         -- cancel these anims, which should let Jump animation take precedence
@@ -378,35 +411,15 @@ local function animate()
         return
     end
 
-    local speed = 1
-
     if (pself.controls.sideMovement <= -1 * settings.main.deadzone) and not animation.isPlaying(pself, surfAnimations.left) then
         settings.debugPrint("anim start left - " .. surfAnimations.left)
-        animation.playBlended(pself, surfAnimations.left, {
-            priority = animation.PRIORITY.Storm,
-            blendMask = animation.BLEND_MASK.UpperBody,
-            --autoDisable = true,
-            loops = -1,
-            speed = speed,
-        })
+        animation.playBlended(pself, surfAnimations.left, armsAnimationOptions)
     elseif (pself.controls.sideMovement >= settings.main.deadzone) and not animation.isPlaying(pself, surfAnimations.right) then
         settings.debugPrint("anim start right - " .. surfAnimations.right)
-        animation.playBlended(pself, surfAnimations.right, {
-            priority = animation.PRIORITY.Storm,
-            blendMask = animation.BLEND_MASK.UpperBody,
-            --autoDisable = true,
-            loops = -1,
-            speed = speed,
-        })
+        animation.playBlended(pself, surfAnimations.right, armsAnimationOptions)
     elseif (math.abs(pself.controls.sideMovement) < settings.main.deadzone) and not animation.isPlaying(pself, surfAnimations.forward) then
         settings.debugPrint("anim start forward - " .. surfAnimations.forward)
-        animation.playBlended(pself, surfAnimations.forward, {
-            priority = animation.PRIORITY.Storm,
-            blendMask = animation.BLEND_MASK.UpperBody,
-            --autoDisable = true,
-            loops = -1,
-            speed = speed,
-        })
+        animation.playBlended(pself, surfAnimations.forward, armsAnimationOptions)
     end
 end
 
@@ -423,7 +436,6 @@ end
 
 local conditionDebt = 0
 local rayCastDelay = 0
-local currentFriction = getFriction()
 
 local function onUpdate(dt)
     if dt == 0 then return end
@@ -456,8 +468,6 @@ local function onUpdate(dt)
         slideSound()
         -- hand animations
         animate()
-
-        currentFriction = getFriction()
 
         -- roll over foot positions
         persist.lastFootPos = persist.currentFootPos
@@ -519,7 +529,7 @@ local function onFrame(dt)
     if persist.applied then
         -- only adjust momenum while on ground
         if persist.landed then
-            persist.momentum = util.clamp(persist.momentum - (currentFriction + slopeMomentumFactor(persist.slope)) * dt,
+            persist.momentum = util.clamp(persist.momentum - (friction + slopeMomentumFactor(persist.slope)) * dt,
                 0,
                 1)
             if persist.landed and (persist.momentum <= kickoutMinimumMomentum) then
