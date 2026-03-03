@@ -28,6 +28,8 @@ local controls                     = require('openmw.interfaces').Controls
 local nearby                       = require('openmw.nearby')
 local animation                    = require('openmw.animation')
 local interfaces                   = require("openmw.interfaces")
+local ringbuffer                   = require("scripts.ErnGlider.ringbuffer")
+local chimtricky                   = require("scripts.ErnGlider.chimtricky")
 local settings                     = require("scripts.ErnGlider.settings")
 
 -- initial momentum when starting surf
@@ -80,7 +82,6 @@ local persist                      = {
 }
 
 local fatigueStat                  = pself.type.stats.dynamic.fatigue(pself)
-
 local surfSpell                    = "eg_surf_1"
 local surfShieldWeightSpells       = {
     light = {
@@ -254,6 +255,8 @@ local function calcPoints(wipeout)
     return total
 end
 
+local currentSpeed = ringbuffer.new(20)
+
 local function removeSurf(wipeout)
     if not persist.applied then
         return
@@ -301,6 +304,8 @@ local function removeSurf(wipeout)
 
     calcPoints(wipeout)
     animation.cancel(pself, 'sneakforward')
+
+    chimtricky.trackSpeed(nil)
 end
 
 local function getFootPos()
@@ -520,6 +525,10 @@ local function onUpdate(dt)
         local xyDist = util.vector2(persist.lastFootPos.x - persist.currentFootPos.x,
             persist.lastFootPos.y - persist.currentFootPos.y):length()
         persist.slope = (persist.currentFootPos.z - persist.lastFootPos.z) / xyDist
+
+        -- game unit / second to km / hour factor is 0.05112
+        currentSpeed:push(xyDist / dt * 0.05112)
+        chimtricky.trackSpeed(currentSpeed:getAverage())
 
         -- only remove whole units of condition
         conditionDebt = conditionDebt + (settings.main.conditionCost * dt)

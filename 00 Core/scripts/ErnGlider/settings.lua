@@ -98,6 +98,12 @@ local function init()
                 default = false,
                 renderer = "checkbox",
             },
+            {
+                key = "chimTricky",
+                name = "chimTrickyName",
+                default = false,
+                renderer = "checkbox",
+            },
         }
     }
 end
