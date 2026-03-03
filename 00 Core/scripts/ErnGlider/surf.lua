@@ -46,7 +46,7 @@ local driftDecay                   = 0.9
 local kickoutMinimumMomentum       = 0.15
 -- prevent surfing when fatigue is at this level.
 local minFatigue                   = 1
-local bigDropConditionDamageFactor = 0.1
+local bigDropConditionDamageFactor = 0.08
 
 local surfAnimations               = {
     forward = "sneakforward",
@@ -428,16 +428,13 @@ local function animate()
 end
 
 local function onJump()
-    persist.startHeightOnCurrentJump = getFootPos().z
-    persist.maxHeightOnCurrentJump = persist.startHeightOnCurrentJump
     if not types.Actor.isOnGround(pself) then
         removeSurf()
         return
     end
-    -- we're doing a sick jump
+    -- we're doing an intentional jump
     settings.debugPrint("trick jump!")
     persist.points.jumps = persist.points.jumps + 1
-    persist.landed = false
 end
 
 local conditionDebt = 0
@@ -460,18 +457,39 @@ local function onUpdate(dt)
             removeSurf()
         end
 
-        persist.currentFootPos = getFootPos()
+        local justLanded = false
+        local justJumped = false
+        if types.Actor.isOnGround(pself) then
+            if not persist.landed then
+                justLanded = true
+            end
+            persist.landed = true
+        else
+            if persist.landed then
+                justJumped = true
+            end
+            persist.landed = false
+        end
+
+        if justJumped then
+            persist.startHeightOnCurrentJump = getFootPos().z
+            persist.maxHeightOnCurrentJump = persist.startHeightOnCurrentJump
+        end
 
         -- track landing
-        if (not animation.isPlaying(pself, "jump")) and not persist.landed then
+        if justLanded then
             persist.landed = true
             settings.debugPrint("Landed!")
-            -- apply extra damage for tall jumps
             local dropHeight = (persist.maxHeightOnCurrentJump - persist.currentFootPos.z)
             local acrobatics = pself.type.stats.skills.acrobatics(pself).modified
-            if dropHeight > 0 and dropHeight > pself:getBoundingBox().halfSize.z * util.remap(acrobatics, 0, 100, 0.25, 4) then
+            local weight = types.Armor.records[getShield().recordId].weight
+            -- heavy shields take more damage on drops because they generally have
+            -- more total Condition, and also Slowfall.
+            local safeHeight = pself:getBoundingBox().halfSize.z * util.remap(acrobatics, 0, 100, 0.25, 4) *
+                math.max(0.1, 1 - (weight / 50))
+            if dropHeight > 0 and dropHeight > safeHeight then
                 settings.debugPrint("Big drop of height " .. tostring(dropHeight))
-                --conditionDebt = conditionDebt + dropHeight * bigDropConditionDamageFactor
+                conditionDebt = conditionDebt + (dropHeight - safeHeight) * bigDropConditionDamageFactor
                 -- play hard landing sound
                 core.sound.playSoundFile3d(sounds.land_hv, pself, {
                     volume = settings.main.volume,
@@ -485,7 +503,7 @@ local function onUpdate(dt)
                     loop = false,
                 })
             end
-        else
+        elseif not persist.landed then
             -- in air
             persist.maxHeightOnCurrentJump = math.max(persist.maxHeightOnCurrentJump, persist.currentFootPos.z)
         end
@@ -497,6 +515,7 @@ local function onUpdate(dt)
 
         -- roll over foot positions
         persist.lastFootPos = persist.currentFootPos
+        persist.currentFootPos = getFootPos()
 
         local xyDist = util.vector2(persist.lastFootPos.x - persist.currentFootPos.x,
             persist.lastFootPos.y - persist.currentFootPos.y):length()
