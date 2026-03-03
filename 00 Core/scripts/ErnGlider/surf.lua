@@ -15,50 +15,51 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]
-local MOD_NAME               = require("scripts.ErnGlider.ns")
-local core                   = require("openmw.core")
-local pself                  = require("openmw.self")
-local camera                 = require('openmw.camera')
-local util                   = require('openmw.util')
-local aux_util               = require('openmw_aux.util')
-local async                  = require("openmw.async")
-local types                  = require('openmw.types')
-local input                  = require('openmw.input')
-local controls               = require('openmw.interfaces').Controls
-local nearby                 = require('openmw.nearby')
-local animation              = require('openmw.animation')
-local interfaces             = require("openmw.interfaces")
-local settings               = require("scripts.ErnGlider.settings")
+local MOD_NAME                     = require("scripts.ErnGlider.ns")
+local core                         = require("openmw.core")
+local pself                        = require("openmw.self")
+local camera                       = require('openmw.camera')
+local util                         = require('openmw.util')
+local aux_util                     = require('openmw_aux.util')
+local async                        = require("openmw.async")
+local types                        = require('openmw.types')
+local input                        = require('openmw.input')
+local controls                     = require('openmw.interfaces').Controls
+local nearby                       = require('openmw.nearby')
+local animation                    = require('openmw.animation')
+local interfaces                   = require("openmw.interfaces")
+local settings                     = require("scripts.ErnGlider.settings")
 
 -- initial momentum when starting surf
-local startMomentum          = 0.2
+local startMomentum                = 0.2
 -- downward slope bonus factor
-local slopeDownMomentumRatio = 0.2
+local slopeDownMomentumRatio       = 0.2
 -- upward slope penalty factor
-local slopeUpMomentumRatio   = 0.6
+local slopeUpMomentumRatio         = 0.6
 -- friction to decay momentum by
-local friction               = 0.01
+local friction                     = 0.01
 -- how much yaw change contributes to side movement drift
-local driftFactor            = 3.0
+local driftFactor                  = 3.0
 -- side movement is multiplied by this each frame so it decays back to 0
-local driftDecay             = 0.9
+local driftDecay                   = 0.9
 -- if momentum drops below this, we quit surfing
-local kickoutMinimumMomentum = 0.15
+local kickoutMinimumMomentum       = 0.15
 -- prevent surfing when fatigue is at this level.
-local minFatigue             = 1
+local minFatigue                   = 1
+local bigDropConditionDamageFactor = 0.1
 
-local surfAnimations         = {
+local surfAnimations               = {
     forward = "sneakforward",
     left = "sneakleft",
     right = "sneakright"
 }
 
-local pointsPerSlideSecond   = 10
-local pointsPerJump          = 1
-local pointsPerAirTimeSecond = 8
-local maxSpeedPointsModifier = 50
+local pointsPerSlideSecond         = 10
+local pointsPerJump                = 1
+local pointsPerAirTimeSecond       = 8
+local maxSpeedPointsModifier       = 50
 
-local persist                = {
+local persist                      = {
     applied = false,
     appliedDuration = 0,
     momentum = startMomentum,
@@ -68,6 +69,8 @@ local persist                = {
     currentFootPos = nil,
     slope = 0,
     sideMovement = 0,
+    startHeightOnCurrentJump = 0,
+    maxHeightOnCurrentJump = 0,
     points = {
         slidePoints = 0,
         airPoints = 0,
@@ -76,10 +79,10 @@ local persist                = {
     },
 }
 
-local fatigueStat            = pself.type.stats.dynamic.fatigue(pself)
+local fatigueStat                  = pself.type.stats.dynamic.fatigue(pself)
 
-local surfSpell              = "eg_surf_1"
-local surfShieldWeightSpells = {
+local surfSpell                    = "eg_surf_1"
+local surfShieldWeightSpells       = {
     light = {
         id = "eg_surf_light",
         effects = { 0, 1 },
@@ -113,7 +116,8 @@ local sounds = {
     gravel_road = getSoundFilePath("gravel_road.mp3"),
     hit_wall = "Sound\\Fx\\body hit.wav",
     land_lt = "Sound\\Fx\\FOOT\\land_lt.wav",
-    land_md = "Sound\\Fx\\FOOT\\land_md.wav"
+    land_md = "Sound\\Fx\\FOOT\\land_md.wav",
+    land_hv = "Sound\\Fx\\FOOT\\land_hv.wav"
 }
 
 local function getShield()
@@ -126,7 +130,6 @@ local function getShield()
         return nil
     end
 
-    print(leftHand)
     if types.Armor.records[leftHand.recordId].type == types.Armor.TYPE.Shield then
         persist.activeShield = leftHand
         return persist.activeShield
@@ -272,9 +275,8 @@ local function removeSurf(wipeout)
         [surfShieldWeightSpells.medium.id] = true,
         [surfShieldWeightSpells.heavy.id] = true
     }
-    settings.debugPrint(aux_util.deepToString(spellsToRemove, 3))
+    --settings.debugPrint(aux_util.deepToString(spellsToRemove, 3))
     for _, spell in pairs(pself.type.activeSpells(pself)) do
-        print("checking" .. spell.id)
         if spellsToRemove[spell.id] then
             pself.type.activeSpells(pself):remove(spell.activeSpellId)
         end
@@ -319,6 +321,8 @@ local function applySurf()
     persist.lastFootPos = getFootPos()
     persist.currentFootPos = getFootPos()
     persist.slope = 0
+    persist.startHeightOnCurrentJump = persist.lastFootPos.z
+    persist.maxHeightOnCurrentJump = persist.lastFootPos.z
 
     -- set up next run
     persist.points = {
@@ -424,6 +428,8 @@ local function animate()
 end
 
 local function onJump()
+    persist.startHeightOnCurrentJump = getFootPos().z
+    persist.maxHeightOnCurrentJump = persist.startHeightOnCurrentJump
     if not types.Actor.isOnGround(pself) then
         removeSurf()
         return
@@ -454,24 +460,44 @@ local function onUpdate(dt)
             removeSurf()
         end
 
+        persist.currentFootPos = getFootPos()
+
         -- track landing
         if (not animation.isPlaying(pself, "jump")) and not persist.landed then
             persist.landed = true
-            -- play landing sound
-            core.sound.playSoundFile3d(sounds.land_md, pself, {
-                volume = settings.main.volume,
-                loop = false,
-            })
+            settings.debugPrint("Landed!")
+            -- apply extra damage for tall jumps
+            local dropHeight = (persist.maxHeightOnCurrentJump - persist.currentFootPos.z)
+            local acrobatics = pself.type.stats.skills.acrobatics(pself).modified
+            if dropHeight > 0 and dropHeight > pself:getBoundingBox().halfSize.z * util.remap(acrobatics, 0, 100, 0.25, 4) then
+                settings.debugPrint("Big drop of height " .. tostring(dropHeight))
+                --conditionDebt = conditionDebt + dropHeight * bigDropConditionDamageFactor
+                -- play hard landing sound
+                core.sound.playSoundFile3d(sounds.land_hv, pself, {
+                    volume = settings.main.volume,
+                    loop = false,
+                })
+            else
+                settings.debugPrint("Small drop of height " .. tostring(dropHeight))
+                -- play softer landing sound
+                core.sound.playSoundFile3d(sounds.land_md, pself, {
+                    volume = settings.main.volume,
+                    loop = false,
+                })
+            end
+        else
+            -- in air
+            persist.maxHeightOnCurrentJump = math.max(persist.maxHeightOnCurrentJump, persist.currentFootPos.z)
         end
 
         -- update gravel sound
         slideSound()
-        -- hand animations
+        -- handle animations
         animate()
 
         -- roll over foot positions
         persist.lastFootPos = persist.currentFootPos
-        persist.currentFootPos = getFootPos()
+
         local xyDist = util.vector2(persist.lastFootPos.x - persist.currentFootPos.x,
             persist.lastFootPos.y - persist.currentFootPos.y):length()
         persist.slope = (persist.currentFootPos.z - persist.lastFootPos.z) / xyDist
