@@ -193,6 +193,8 @@ local function canApply()
     return true
 end
 
+local fatigueDebt = 0
+
 local function removeGlider()
     if not persist.applied then
         return
@@ -234,9 +236,9 @@ local function removeGlider()
             animation.cancel(pself, animName)
         end
     end
-end
 
-local fatigueDebt = 0
+    fatigueDebt = 0
+end
 
 local function applyGlider()
     if not canApply() then
