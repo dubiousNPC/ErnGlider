@@ -64,6 +64,7 @@ Masterwork glider: `setJournalIndex eg_glider 31`
 ### Third-Party Code
 
 - openmw-animated-levitation -- https://gitlab.com/fallchildren/openmw-animated-levitation -- GPL
+- PCP-OpenMW by Qlonever -- https://github.com/Qlonever/PCP-OpenMW) -- MIT License
 
 ## TODO
 

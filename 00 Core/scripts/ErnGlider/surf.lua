@@ -66,6 +66,7 @@ local persist                      = {
     appliedDuration = 0,
     momentum = startMomentum,
     activeShield = nil,
+    activeShieldRecord = nil,
     landed = false,
     lastFootPos = nil,
     currentFootPos = nil,
@@ -128,14 +129,17 @@ local function getShield()
     local leftHand = pself.type.getEquipment(pself, types.Actor.EQUIPMENT_SLOT.CarriedLeft)
     if (not leftHand) or (not types.Armor.objectIsInstance(leftHand)) then
         persist.activeShield = nil
+        persist.activeShieldRecord = nil
         return nil
     end
 
     if types.Armor.records[leftHand.recordId].type == types.Armor.TYPE.Shield then
         persist.activeShield = leftHand
+        persist.activeShieldRecord = types.Armor.records[leftHand.recordId]
         return persist.activeShield
     end
     persist.activeShield = nil
+    persist.activeShieldRecord = nil
     return nil
 end
 
@@ -561,7 +565,7 @@ local function onUpdate(dt)
 
         chimtricky.display({
             speed = currentSpeed:getAverage(),
-            conditionRatio = types.Item.itemData(getShield()).condition,
+            conditionRatio = types.Item.itemData(getShield()).condition / persist.activeShieldRecord.health,
             fatigueRatio = fatigueStat.current / fatigueStat.base
         })
     else

@@ -47,9 +47,20 @@ local kphText    = ui.create {
     }
 }
 
-local function barLayout()
+-- from PCP-OpenMW
+-- Get a usable color value from a fallback in openmw.cfg
+local function configColor(setting)
+    local v = core.getGMST('FontColor_color_' .. setting)
+    local values = {}
+    for i in v:gmatch('([^,]+)') do table.insert(values, tonumber(i)) end
+    local color = util.color.rgb(values[1] / 255, values[2] / 255, values[3] / 255)
+    return color
+end
+
+local function barLayout(ratio, color)
     return {
         type = ui.TYPE.Widget,
+        name = 'bar',
         template = interfaces.MWUI.templates.borders,
         props = {
             size = util.vector2(20, 100),
@@ -72,18 +83,25 @@ local function barLayout()
                 name = 'barFill',
                 props = {
                     resource = ui.texture { path = 'white' },
-                    relativePosition = util.vector2(0, 0),
-                    relativeSize = util.vector2(1, 0),
+                    anchor = util.vector2(0, 1),
+                    relativePosition = util.vector2(0, 1),
+                    relativeSize = util.vector2(1, ratio),
                     alpha = 0.4,
-                    color = util.color.rgb(0.8, 0.8, 0.5),
+                    color = color,
                 },
             },
         }
     }
 end
 
-local fatigueBar         = ui.create(barLayout())
-local conditionBar       = ui.create(barLayout())
+local function setRatio(elem, ratio)
+    if elem.layout.content.barFill.props.relativeSize.y ~= ratio then
+        elem.layout.content.barFill.props.relativeSize = util.vector2(1, ratio)
+    end
+end
+
+local fatigueBar         = ui.create(barLayout(0.3, configColor("fatigue")))
+local conditionBar       = ui.create(barLayout(0.7, configColor("weapon_fill")))
 
 local root               = ui.create {
     name = "root",
@@ -159,10 +177,16 @@ local function display(data)
         kphText:update()
     end
 
+    if data.fatigueRatio then
+        setRatio(fatigueBar, data.fatigueRatio)
+    end
     fatigueBar:update()
+    if data.conditionRatio then
+        setRatio(conditionBar, data.conditionRatio)
+    end
     conditionBar:update()
 
-    settings.debugPrint(aux_util.deepToString(data, 3))
+    --settings.debugPrint(aux_util.deepToString(data, 3))
     root:update()
     currentDisplayData = data
 end
