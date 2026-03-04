@@ -33,98 +33,140 @@ local settings   = require("scripts.ErnGlider.settings")
 
 -- TODO: also show fatigue and current shield condition and turn off other hud stuff
 
-local speedHUD   = nil
-local speedText  = nil
-local speed      = nil
+local kphText    = ui.create {
+    type = ui.TYPE.Text,
+    name = "speedText",
+    props = {
+        text = "0 kph",
+        textColor = util.color.rgba(.9, 0.9, 0.8, 0.9),
+        textShadow = true,
+        textShadowColor = util.color.rgba(0, 0, 0, 0.9),
+        textAlignV = ui.ALIGNMENT.Start,
+        textAlignH = ui.ALIGNMENT.Start,
+        textSize = 18,
+    }
+}
 
-local function trackSpeed(newSpeed)
-    if speedHUD == nil then
-        return
+local function barLayout()
+    return {
+        type = ui.TYPE.Widget,
+        template = interfaces.MWUI.templates.borders,
+        props = {
+            size = util.vector2(20, 100),
+        },
+        content = ui.content {
+            {
+                type = ui.TYPE.Image,
+                name = 'barContainer',
+                props = {
+                    resource = ui.texture { path = 'white' },
+                    relativePosition = util.vector2(0, 0),
+                    relativeSize = util.vector2(1, 1),
+                    alpha = 0.625,
+                    color = util.color.rgb(0.1, 0.1, 0.1),
+                },
+                events = {},
+            },
+            {
+                type = ui.TYPE.Image,
+                name = 'barFill',
+                props = {
+                    resource = ui.texture { path = 'white' },
+                    relativePosition = util.vector2(0, 0),
+                    relativeSize = util.vector2(1, 0),
+                    alpha = 0.4,
+                    color = util.color.rgb(0.8, 0.8, 0.5),
+                },
+            },
+        }
+    }
+end
+
+local fatigueBar         = ui.create(barLayout())
+local conditionBar       = ui.create(barLayout())
+
+local root               = ui.create {
+    name = "root",
+    layer = 'HUD',
+    type = ui.TYPE.Container,
+    --template = interfaces.MWUI.templates.boxTransparentThick,
+    props = {
+        relativePosition = util.vector2(1, 0.5),
+        anchor = util.vector2(1, 0.5),
+        visible = false,
+        autoSize = true,
+    },
+    content = ui.content {
+        {
+            name = 'vFlex',
+            type = ui.TYPE.Flex,
+            props = {
+                horizontal = false,
+                arrange = ui.ALIGNMENT.Center,
+            },
+            content = ui.content {
+                {
+                    -- ensures minimum size
+                    props = { size = util.vector2(60, 0) }
+                },
+                kphText,
+                {
+                    name = 'barFlex',
+                    type = ui.TYPE.Flex,
+                    props = {
+                        horizontal = true,
+                        autoSize = true,
+                    },
+                    content = ui.content {
+                        fatigueBar, conditionBar
+                    }
+                },
+            }
+        }
+    }
+}
+
+---@class DisplayData
+---@field speed number
+---@field conditionRatio number
+---@field fatigueRatio number
+
+---@type DisplayData?
+local currentDisplayData = nil
+
+---@param data DisplayData?
+local function display(data)
+    if not settings.main.chimTricky then
+        data = nil
     end
-    if speed == newSpeed then
+    -- handle visibility
+    if not data then
+        -- newly hidden
+        if currentDisplayData then
+            settings.debugPrint("Hiding CHIM Tricky UI")
+            currentDisplayData = nil
+            root.layout.props.visible = false
+            root:update()
+        end
+        --no-op
         return
-    end
-    if newSpeed == nil then
-        speedHUD.layout.props.visible = false
     else
-        speedHUD.layout.props.visible = true and settings.main.chimTricky
+        root.layout.props.visible = true
     end
 
-    speedHUD.layout.content.compassFlex.content.speedText.props.text = tostring(math.floor(newSpeed)) .. " kph"
-    speedHUD:update()
-    speed = newSpeed
-end
-
-local function createSpeedHUD()
-    if speedHUD then
-        speedHUD:destroy()
-        speedHUD = nil
-        speedText = nil
+    if data.speed then
+        kphText.layout.props.text = tostring(math.floor(data.speed)) .. " kph"
+        kphText:update()
     end
 
-    local template = {
-        content = ui.content {},
-        props = {
-            visible = settings.main.chimTricky
-        }
-    }
+    fatigueBar:update()
+    conditionBar:update()
 
-    local speedHUDBackground = {
-        type = ui.TYPE.Image,
-        name = "speedHUDBackground",
-        props = {
-            resource = ui.texture { path = 'black' },
-            relativeSize = util.vector2(1, 1),
-            alpha = 0.8
-        }
-    }
-
-    template.content:add(speedHUDBackground)
-    speedHUD = ui.create({
-        type = ui.TYPE.Container,
-        layer = 'HUD',
-        name = "speedHUD",
-        props = {
-            relativePosition = util.vector2(0.5, 0.1),
-            anchor = util.vector2(0.5, 0.5),
-            autoSize = true,
-            visible = false,
-        },
-        content = ui.content { speedHUDBackground },
-    })
-
-    local speedFlex = {
-        type = ui.TYPE.Flex,
-        name = "compassFlex",
-        props = {
-            horizontal = false,
-            autoSize = true,
-            size = util.vector2(1, 1),
-            arrange = ui.ALIGNMENT.Start
-        },
-        content = ui.content {}
-    }
-    speedHUD.layout.content:add(speedFlex)
-
-    speedText = {
-        type = ui.TYPE.Text,
-        name = "speedText",
-        props = {
-            text = "0 kph",
-            textColor = util.color.rgba(.9, 0.9, 0.8, 0.9),
-            textShadow = true,
-            textShadowColor = util.color.rgba(0, 0, 0, 0.9),
-            textAlignV = ui.ALIGNMENT.Start,
-            textAlignH = ui.ALIGNMENT.Start,
-            textSize = 18,
-        },
-    }
-
-    speedFlex.content:add(speedText)
+    settings.debugPrint(aux_util.deepToString(data, 3))
+    root:update()
+    currentDisplayData = data
 end
-
-createSpeedHUD()
 
 return {
-    trackSpeed = trackSpeed,
+    display = display,
 }

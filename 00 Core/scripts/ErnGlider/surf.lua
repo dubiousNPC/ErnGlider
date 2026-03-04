@@ -305,7 +305,7 @@ local function removeSurf(wipeout)
     calcPoints(wipeout)
     animation.cancel(pself, 'sneakforward')
 
-    chimtricky.trackSpeed(nil)
+    chimtricky.display(nil)
 end
 
 local function getFootPos()
@@ -528,7 +528,6 @@ local function onUpdate(dt)
 
         -- game unit / second to km / hour factor is 0.05112
         currentSpeed:push(xyDist / dt * 0.05112)
-        chimtricky.trackSpeed(currentSpeed:getAverage())
 
         -- only remove whole units of condition
         conditionDebt = conditionDebt + (settings.main.conditionCost * dt)
@@ -559,7 +558,14 @@ local function onUpdate(dt)
         end
         -- track duration of surf
         persist.appliedDuration = persist.appliedDuration + dt
+
+        chimtricky.display({
+            speed = currentSpeed:getAverage(),
+            conditionRatio = types.Item.itemData(getShield()).condition,
+            fatigueRatio = fatigueStat.current / fatigueStat.base
+        })
     else
+        -- not currently surfing
         conditionDebt = 0
     end
 end
