@@ -37,10 +37,6 @@ end)
 
 input.registerTriggerHandler("Jump", async:callback(
     function()
-        if not settings.main.enable then
-            return
-        end
-
         -- go back to normal movement?
         local handled = false
         if interfaces.ErnGliderGlider.isApplied() then
@@ -60,9 +56,13 @@ input.registerTriggerHandler("Jump", async:callback(
                 -- no forward movement action on purpose.
                 -- people like bunny hopping.
             elseif pself.controls.movement < -1 * settings.main.deadzone then
-                interfaces.ErnGliderSurf.apply()
+                if settings.surf.enable then
+                    interfaces.ErnGliderSurf.apply()
+                end
             else
-                interfaces.ErnGliderGlider.apply()
+                if settings.glider.enable then
+                    interfaces.ErnGliderGlider.apply()
+                end
             end
         end
     end

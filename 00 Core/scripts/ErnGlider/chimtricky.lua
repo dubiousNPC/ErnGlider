@@ -15,25 +15,26 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]
-local MOD_NAME   = require("scripts.ErnGlider.ns")
-local core       = require("openmw.core")
-local pself      = require("openmw.self")
-local camera     = require('openmw.camera')
-local util       = require('openmw.util')
-local async      = require("openmw.async")
-local types      = require('openmw.types')
-local input      = require('openmw.input')
-local controls   = require('openmw.interfaces').Controls
-local nearby     = require('openmw.nearby')
-local animation  = require('openmw.animation')
-local ui         = require('openmw.ui')
-local aux_util   = require('openmw_aux.util')
-local interfaces = require("openmw.interfaces")
-local settings   = require("scripts.ErnGlider.settings")
+local MOD_NAME     = require("scripts.ErnGlider.ns")
+local core         = require("openmw.core")
+local pself        = require("openmw.self")
+local camera       = require('openmw.camera')
+local util         = require('openmw.util')
+local async        = require("openmw.async")
+local types        = require('openmw.types')
+local input        = require('openmw.input')
+local controls     = require('openmw.interfaces').Controls
+local nearby       = require('openmw.nearby')
+local animation    = require('openmw.animation')
+local ui           = require('openmw.ui')
+local aux_util     = require('openmw_aux.util')
+local interfaces   = require("openmw.interfaces")
+local settings     = require("scripts.ErnGlider.settings")
+local localization = core.l10n(MOD_NAME)
 
 -- TODO: also show fatigue and current shield condition and turn off other hud stuff
 
-local kphText    = ui.create {
+local kphText      = ui.create {
     type = ui.TYPE.Text,
     name = "speedText",
     props = {
@@ -154,7 +155,7 @@ local currentDisplayData = nil
 
 ---@param data DisplayData?
 local function display(data)
-    if not settings.main.chimTricky then
+    if not settings.surf.chimTricky then
         data = nil
     end
     -- handle visibility
@@ -173,8 +174,10 @@ local function display(data)
     end
 
     if data.speed then
-        kphText.layout.props.text = tostring(math.floor(data.speed)) .. " kph"
-        kphText:update()
+        if currentDisplayData ~= nil and currentDisplayData.speed ~= data.speed then
+            kphText.layout.props.text = localization('kph', { value = math.floor(data.speed) })
+            kphText:update()
+        end
     end
 
     if data.fatigueRatio then

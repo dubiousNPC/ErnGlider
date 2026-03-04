@@ -456,7 +456,7 @@ local rayCastDelay = 0
 
 local function onUpdate(dt)
     if dt == 0 then return end
-    if not settings.main.enable then
+    if not settings.surf.enable then
         removeSurf()
         return
     end
@@ -539,7 +539,7 @@ local function onUpdate(dt)
         currentSpeed:push(xyDist / dt * 0.05112)
 
         -- only remove whole units of condition
-        conditionDebt = conditionDebt + (settings.main.conditionCost * dt)
+        conditionDebt = conditionDebt + (settings.surf.conditionCost * dt)
         if conditionDebt > 1 then
             local whole = math.floor(conditionDebt)
             conditionDebt = conditionDebt - whole

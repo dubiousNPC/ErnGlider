@@ -15,12 +15,14 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]
-local interfaces   = require("openmw.interfaces")
-local storage      = require("openmw.storage")
-local MOD_NAME     = require("scripts.ErnGlider.ns")
-local util         = require('openmw.util')
+local interfaces     = require("openmw.interfaces")
+local storage        = require("openmw.storage")
+local MOD_NAME       = require("scripts.ErnGlider.ns")
+local util           = require('openmw.util')
 
-local mainGroupKey = "Settings/" .. MOD_NAME
+local mainGroupKey   = "Settings/" .. MOD_NAME
+local gliderGroupKey = "Settings/" .. MOD_NAME .. "/glider"
+local surfGroupKey   = "Settings/" .. MOD_NAME .. "/surf"
 
 local function init()
     interfaces.Settings.registerPage {
@@ -34,40 +36,10 @@ local function init()
         key = mainGroupKey,
         page = MOD_NAME,
         l10n = MOD_NAME,
-        name = "settings",
+        name = "mainSettings",
         permanentStorage = true,
+        order = 10,
         settings = {
-            {
-                key = "enable",
-                name = "enableName",
-                description = "enableDescription",
-                default = true,
-                renderer = "checkbox",
-            },
-            {
-                key = "fatigueCost",
-                name = "fatigueCostName",
-                description = "fatigueCostDescription",
-                default = 5,
-                renderer = "number",
-                argument = {
-                    integer = true,
-                    min = 0,
-                    max = 100
-                }
-            },
-            {
-                key = "conditionCost",
-                name = "conditionCostName",
-                description = "conditionCostDescription",
-                default = 4,
-                renderer = "number",
-                argument = {
-                    integer = true,
-                    min = 0,
-                    max = 100
-                }
-            },
             {
                 key = "deadzone",
                 name = "deadzoneName",
@@ -97,6 +69,68 @@ local function init()
                 name = "debugName",
                 default = false,
                 renderer = "checkbox",
+            },
+        }
+    }
+
+    interfaces.Settings.registerGroup {
+        key = gliderGroupKey,
+        page = MOD_NAME,
+        l10n = MOD_NAME,
+        name = "gliderSettings",
+        description = "gliderDescription",
+        permanentStorage = true,
+        order = 1,
+        settings = {
+            {
+                key = "enable",
+                name = "enableName",
+                description = "enableDescription",
+                default = true,
+                renderer = "checkbox",
+            },
+            {
+                key = "fatigueCost",
+                name = "fatigueCostName",
+                description = "fatigueCostDescription",
+                default = 5,
+                renderer = "number",
+                argument = {
+                    integer = true,
+                    min = 0,
+                    max = 100
+                }
+            },
+        }
+    }
+
+    interfaces.Settings.registerGroup {
+        key = surfGroupKey,
+        page = MOD_NAME,
+        l10n = MOD_NAME,
+        name = "surfSettings",
+        description = "surfDescription",
+        permanentStorage = true,
+        order = 2,
+        settings = {
+            {
+                key = "enable",
+                name = "enableName",
+                description = "enableDescription",
+                default = true,
+                renderer = "checkbox",
+            },
+            {
+                key = "conditionCost",
+                name = "conditionCostName",
+                description = "conditionCostDescription",
+                default = 2,
+                renderer = "number",
+                argument = {
+                    integer = true,
+                    min = 0,
+                    max = 100
+                }
             },
             {
                 key = "chimTricky",
@@ -136,6 +170,18 @@ local mainContainer = {
 }
 setmetatable(mainContainer, lookupFuncTable)
 
+local gliderContainer = {
+    groupKey = gliderGroupKey,
+    section = storage.playerSection(gliderGroupKey)
+}
+setmetatable(gliderContainer, lookupFuncTable)
+
+local surfContainer = {
+    groupKey = surfGroupKey,
+    section = storage.playerSection(surfGroupKey)
+}
+setmetatable(surfContainer, lookupFuncTable)
+
 local function debugPrint(str, ...)
     if mainContainer.debugMode then
         local arg = { ... }
@@ -157,5 +203,7 @@ end
 return {
     init = init,
     main = mainContainer,
+    surf = surfContainer,
+    glider = gliderContainer,
     debugPrint = debugPrint,
 }

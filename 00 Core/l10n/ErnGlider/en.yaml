@@ -1,9 +1,14 @@
 name: "Glider"
-description: "Gracefully glide through the air by double-jumping while your hands are unreadied."
-settings: "Settings"
+description: "Why walk when you can glide?"
+
+mainSettings: "Shared"
+gliderSettings: "Gliding"
+gliderDescription: "Gracefully glide through the air by double-jumping while your hands are unreadied, and you are moving neither forward nor backward."
+surfSettings: "Shield Surfing"
+surfDescription: "Slip down slopes by double-jumping while your hands are unreadied, and you are moving backward."
 
 enableName: "Enable"
-enableDescription: "Enable or disable the whole mod."
+enableDescription: "Enable or disable this feature."
 debugName: "Debug Mode"
 fatigueCostName: "Glider Fatigue Cost"
 fatigueCostDescription: "Fatigue cost per second while gliding. If you run out of Fatigue, you fall. Natural fatigue regeneration is halted while gliding."
@@ -15,3 +20,5 @@ volumeName: "Volume"
 volumeDescription: "Sound effect volume factor."
 chimTrickyName: "CHIM Tricky"
 chimTrickyDescription: "Custom shield surfing UI mode."
+
+kph: "{value} kph"

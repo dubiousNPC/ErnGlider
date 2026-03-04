@@ -132,7 +132,7 @@ local enduranceStat = pself.type.stats.attributes.endurance(pself)
 local fatigueStat = pself.type.stats.dynamic.fatigue(pself)
 
 local function instantCost()
-    return math.ceil(settings.main.fatigueCost)
+    return math.ceil(settings.glider.fatigueCost)
 end
 
 local function naturalFatigueRegenRate()
@@ -337,7 +337,7 @@ local rayCastDelay = 0
 
 local function onUpdate(dt)
     if dt == 0 then return end
-    if not settings.main.enable then
+    if not settings.glider.enable then
         removeGlider()
         return
     end
@@ -347,7 +347,7 @@ local function onUpdate(dt)
             return
         end
         -- only remove whole units of fatigue
-        fatigueDebt = fatigueDebt + (naturalFatigueRegenRate() + settings.main.fatigueCost) * dt
+        fatigueDebt = fatigueDebt + (naturalFatigueRegenRate() + settings.glider.fatigueCost) * dt
         if fatigueDebt > 1 then
             local whole = math.floor(fatigueDebt)
             fatigueDebt = fatigueDebt - whole
