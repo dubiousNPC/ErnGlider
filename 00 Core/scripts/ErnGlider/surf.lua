@@ -299,6 +299,11 @@ local function removeSurf(wipeout)
         loop = false,
     })
 
+    -- stop surf anims now
+    animation.cancel(pself, surfAnimations.forward)
+    animation.cancel(pself, surfAnimations.right)
+    animation.cancel(pself, surfAnimations.left)
+
     -- ending animation
     interfaces.AnimationController.playBlendedAnimation('jump', {
         priority = animation.PRIORITY.Jump,
