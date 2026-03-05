@@ -50,12 +50,6 @@ local kickoutMinimumMomentum       = 0.15
 local minFatigue                   = 1
 local bigDropConditionDamageFactor = 0.08
 
-local surfAnimations               = {
-    forward = "sneakforward",
-    left = "sneakleft",
-    right = "sneakright"
-}
-
 local pointsPerSlideSecond         = 10
 local pointsPerJump                = 1
 local pointsPerAirTimeSecond       = 8
@@ -112,7 +106,7 @@ local function getSoundFilePath(file)
     return "sound\\" .. MOD_NAME .. "\\" .. file
 end
 
-local sounds = {
+local sounds         = {
     wind = getSoundFilePath("wind.mp3"),
     breath_in = getSoundFilePath("breath_in.mp3"),
     gravel_road = getSoundFilePath("gravel_road.mp3"),
@@ -121,6 +115,19 @@ local sounds = {
     land_md = "Sound\\Fx\\FOOT\\land_md.wav",
     land_hv = "Sound\\Fx\\FOOT\\land_hv.wav"
 }
+
+local shieldBone     = "Shield01"
+local surfAnimations = {
+    forward = "Shieldgo",
+    left = "sneakleft",
+    right = "sneakright"
+}
+
+local function cancelSurfAnimations()
+    animation.cancel(pself, surfAnimations.forward)
+    animation.cancel(pself, surfAnimations.right)
+    animation.cancel(pself, surfAnimations.left)
+end
 
 local function getShield()
     if persist.activeShield then
@@ -165,7 +172,8 @@ local function applySurfSpell()
         ignoreReflect = true
     })
     pself.type.activeSpells(pself):add(getSurfWeightSpell())
-    animation.addVfx(pself, shieldModel, { loop = true, boneName = "Left Foot", vfxId = "surf", useAmbientLight = false })
+    animation.addVfx(pself, shieldModel,
+        { loop = true, boneName = shieldBone, vfxId = "surf", useAmbientLight = false })
 
     -- this should be re-applied often if it is not playing or something.
     --[[
@@ -300,9 +308,7 @@ local function removeSurf(wipeout)
     })
 
     -- stop surf anims now
-    animation.cancel(pself, surfAnimations.forward)
-    animation.cancel(pself, surfAnimations.right)
-    animation.cancel(pself, surfAnimations.left)
+    cancelSurfAnimations()
 
     -- ending animation
     interfaces.AnimationController.playBlendedAnimation('jump', {
@@ -312,7 +318,6 @@ local function removeSurf(wipeout)
     })
 
     calcPoints(wipeout)
-    animation.cancel(pself, 'sneakforward')
 
     chimtricky.display(nil)
 end
@@ -420,12 +425,17 @@ local armsAnimationOptions = {
     loops = -1,
     speed = 1,
 }
+local fullAnimationOptions = {
+    priority = animation.PRIORITY.Storm,
+    --blendMask = util.bitOr(animation.BLEND_MASK.LeftArm, animation.BLEND_MASK.RightArm),
+    --blendMask = animation.BLEND_MASK.UpperBody,
+    loops = -1,
+    speed = 1,
+}
 local function animate()
     if not types.Actor.isOnGround(pself) then
         -- cancel these anims, which should let Jump animation take precedence
-        animation.cancel(pself, surfAnimations.forward)
-        animation.cancel(pself, surfAnimations.right)
-        animation.cancel(pself, surfAnimations.left)
+        cancelSurfAnimations()
         return
     end
 
@@ -437,7 +447,7 @@ local function animate()
         animation.playBlended(pself, surfAnimations.right, armsAnimationOptions)
     elseif (math.abs(pself.controls.sideMovement) < settings.main.deadzone) and not animation.isPlaying(pself, surfAnimations.forward) then
         settings.debugPrint("anim start forward - " .. surfAnimations.forward)
-        animation.playBlended(pself, surfAnimations.forward, armsAnimationOptions)
+        animation.playBlended(pself, surfAnimations.forward, fullAnimationOptions)
     end
 end
 
