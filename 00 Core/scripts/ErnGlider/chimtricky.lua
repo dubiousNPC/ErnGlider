@@ -45,6 +45,8 @@ local kphText      = ui.create {
         textAlignV = ui.ALIGNMENT.Start,
         textAlignH = ui.ALIGNMENT.Start,
         textSize = 18,
+        relativePosition = util.vector2(1, 0),
+        anchor = util.vector2(1, 0),
     }
 }
 
@@ -74,7 +76,7 @@ local function barLayout(ratio, color)
                     resource = ui.texture { path = 'white' },
                     relativePosition = util.vector2(0, 0),
                     relativeSize = util.vector2(1, 1),
-                    alpha = 0.625,
+                    alpha = 0.7,
                     color = util.color.rgb(0.1, 0.1, 0.1),
                 },
                 events = {},
@@ -87,7 +89,7 @@ local function barLayout(ratio, color)
                     anchor = util.vector2(0, 1),
                     relativePosition = util.vector2(0, 1),
                     relativeSize = util.vector2(1, ratio),
-                    alpha = 0.4,
+                    alpha = 0.7,
                     color = color,
                 },
             },
@@ -125,8 +127,8 @@ local root               = ui.create {
             },
             content = ui.content {
                 {
-                    -- ensures minimum size
-                    props = { size = util.vector2(60, 0) }
+                    -- ensures minimum width
+                    props = { size = util.vector2(60, 0) },
                 },
                 kphText,
                 {
@@ -137,7 +139,11 @@ local root               = ui.create {
                         autoSize = true,
                     },
                     content = ui.content {
-                        fatigueBar, conditionBar
+                        { props = { size = util.vector2(4, 0) } },
+                        fatigueBar,
+                        { props = { size = util.vector2(4, 0) } },
+                        conditionBar,
+                        { props = { size = util.vector2(4, 0) } }
                     }
                 },
             }

@@ -116,9 +116,9 @@ local sounds         = {
     land_hv = "Sound\\Fx\\FOOT\\land_hv.wav"
 }
 
-local shieldBone     = "Shield01"
+local shieldBone     = "Right Foot"
 local surfAnimations = {
-    forward = "Shieldgo",
+    forward = "Shieldgo", --"Shieldgo",
     left = "sneakleft",
     right = "sneakright"
 }
@@ -441,23 +441,29 @@ local function animate()
 
     if (pself.controls.sideMovement <= -1 * settings.main.deadzone) and not animation.isPlaying(pself, surfAnimations.left) then
         settings.debugPrint("anim start left - " .. surfAnimations.left)
+        animation.cancel(pself, surfAnimations.right)
         animation.playBlended(pself, surfAnimations.left, armsAnimationOptions)
     elseif (pself.controls.sideMovement >= settings.main.deadzone) and not animation.isPlaying(pself, surfAnimations.right) then
         settings.debugPrint("anim start right - " .. surfAnimations.right)
+        animation.cancel(pself, surfAnimations.left)
         animation.playBlended(pself, surfAnimations.right, armsAnimationOptions)
-    elseif (math.abs(pself.controls.sideMovement) < settings.main.deadzone) and not animation.isPlaying(pself, surfAnimations.forward) then
-        settings.debugPrint("anim start forward - " .. surfAnimations.forward)
-        animation.playBlended(pself, surfAnimations.forward, fullAnimationOptions)
+    elseif (math.abs(pself.controls.sideMovement) < settings.main.deadzone) then
+        animation.cancel(pself, surfAnimations.left)
+        animation.cancel(pself, surfAnimations.right)
+        if not animation.isPlaying(pself, surfAnimations.forward) then
+            settings.debugPrint("anim start forward - " .. surfAnimations.forward)
+            animation.playBlended(pself, surfAnimations.forward, fullAnimationOptions)
+        end
     end
 end
 
 local function onJump()
+    -- we're doing an intentional jump
+    settings.debugPrint("intentional jump")
     if not types.Actor.isOnGround(pself) then
         removeSurf()
         return
     end
-    -- we're doing an intentional jump
-    settings.debugPrint("trick jump!")
     persist.points.jumps = persist.points.jumps + 1
 end
 
@@ -466,11 +472,11 @@ local rayCastDelay = 0
 
 local function onUpdate(dt)
     if dt == 0 then return end
-    if not settings.surf.enable then
-        removeSurf()
-        return
-    end
     if persist.applied then
+        if not settings.surf.enable then
+            removeSurf()
+            return
+        end
         if not canApply() then
             removeSurf()
             return

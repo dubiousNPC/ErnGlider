@@ -337,11 +337,11 @@ local rayCastDelay = 0
 
 local function onUpdate(dt)
     if dt == 0 then return end
-    if not settings.glider.enable then
-        removeGlider()
-        return
-    end
     if persist.applied then
+        if not settings.glider.enable then
+            removeGlider()
+            return
+        end
         if not canApply() then
             removeGlider()
             return
