@@ -119,8 +119,8 @@ local sounds         = {
 local shieldBone     = "Right Foot"
 local surfAnimations = {
     forward = "Shieldgo", --"Shieldgo",
-    left = "sneakleft",
-    right = "sneakright"
+    left = "ShieldL",
+    right = "ShieldR"
 }
 
 local function cancelSurfAnimations()
@@ -440,13 +440,19 @@ local function animate()
     end
 
     if (pself.controls.sideMovement <= -1 * settings.main.deadzone) and not animation.isPlaying(pself, surfAnimations.left) then
-        settings.debugPrint("anim start left - " .. surfAnimations.left)
+        animation.cancel(pself, surfAnimations.forward)
         animation.cancel(pself, surfAnimations.right)
-        animation.playBlended(pself, surfAnimations.left, armsAnimationOptions)
+        if not animation.isPlaying(pself, surfAnimations.left) then
+            settings.debugPrint("anim start left - " .. surfAnimations.left)
+            animation.playBlended(pself, surfAnimations.left, fullAnimationOptions)
+        end
     elseif (pself.controls.sideMovement >= settings.main.deadzone) and not animation.isPlaying(pself, surfAnimations.right) then
-        settings.debugPrint("anim start right - " .. surfAnimations.right)
         animation.cancel(pself, surfAnimations.left)
-        animation.playBlended(pself, surfAnimations.right, armsAnimationOptions)
+        animation.cancel(pself, surfAnimations.forward)
+        if not animation.isPlaying(pself, surfAnimations.right) then
+            settings.debugPrint("anim start right - " .. surfAnimations.right)
+            animation.playBlended(pself, surfAnimations.right, fullAnimationOptions)
+        end
     elseif (math.abs(pself.controls.sideMovement) < settings.main.deadzone) then
         animation.cancel(pself, surfAnimations.left)
         animation.cancel(pself, surfAnimations.right)
