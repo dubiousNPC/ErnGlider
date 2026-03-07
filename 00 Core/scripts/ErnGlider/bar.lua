@@ -71,7 +71,7 @@ local function barLayout(ratio, color, flashColor)
                         type = ui.TYPE.Image,
                         name = 'barFlash',
                         props = {
-                            resource = ui.texture { path = 'white' },
+                            resource = ui.texture { path = 'Textures/ErnGlider/vert_gradient.dds' },
                             anchor = util.vector2(0, 1),
                             --relativePosition = util.vector2(0, ratio),
                             relativeSize = util.vector2(1, 0),
@@ -83,7 +83,7 @@ local function barLayout(ratio, color, flashColor)
                         type = ui.TYPE.Image,
                         name = 'barFill',
                         props = {
-                            resource = ui.texture { path = 'white' },
+                            resource = ui.texture { path = 'Textures/ErnGlider/vert_gradient.dds' },
                             anchor = util.vector2(0, 1),
                             --relativePosition = util.vector2(0, 1),
                             relativeSize = util.vector2(1, ratio),
