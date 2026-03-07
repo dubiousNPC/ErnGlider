@@ -237,6 +237,14 @@ local function removeGlider()
         end
     end
 
+    if not animation.isPlaying(pself, "jump") then
+        animation.playBlended(pself, "jump", {
+            priority = animation.PRIORITY.Movement,
+            autoDisable = true,
+            loops = -1,
+        })
+    end
+
     fatigueDebt = 0
 end
 
@@ -272,6 +280,11 @@ local function applyGlider()
     fatigueDebt = -0.8 * cost
 end
 
+local glideAnimOptions = {
+    priority = animation.PRIORITY.Storm,
+    autoDisable = true,
+}
+
 local function animate()
     local aLeft = glideranim[cachedCurrentGlider].left
     local aRight = glideranim[cachedCurrentGlider].right
@@ -280,32 +293,17 @@ local function animate()
         settings.debugPrint("anim start left - " .. aLeft)
         animation.cancel(pself, aRight)
         animation.cancel(pself, aForward)
-        animation.playBlended(pself, aLeft, {
-            priority = animation.PRIORITY.Storm,
-            --blendMask = animation.BLEND_MASK.UpperBody,
-            --autoDisable = true,
-            loops = -1,
-        })
+        animation.playBlended(pself, aLeft, glideAnimOptions)
     elseif (pself.controls.sideMovement >= settings.main.deadzone) and not animation.isPlaying(pself, aRight) then
         settings.debugPrint("anim start right - " .. aRight)
         animation.cancel(pself, aLeft)
         animation.cancel(pself, aForward)
-        animation.playBlended(pself, aRight, {
-            priority = animation.PRIORITY.Storm,
-            --blendMask = animation.BLEND_MASK.UpperBody,
-            --autoDisable = true,
-            loops = -1,
-        })
+        animation.playBlended(pself, aRight, glideAnimOptions)
     elseif (math.abs(pself.controls.sideMovement) < settings.main.deadzone) and not animation.isPlaying(pself, aForward) then
         settings.debugPrint("anim start forward - " .. aForward)
         animation.cancel(pself, aLeft)
         animation.cancel(pself, aRight)
-        animation.playBlended(pself, aForward, {
-            priority = animation.PRIORITY.Storm,
-            --blendMask = animation.BLEND_MASK.UpperBody,
-            --autoDisable = true,
-            loops = -1,
-        })
+        animation.playBlended(pself, aForward, glideAnimOptions)
     end
 end
 
