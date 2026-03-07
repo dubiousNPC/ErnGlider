@@ -278,6 +278,8 @@ local function animate()
     local aForward = glideranim[cachedCurrentGlider].forward
     if (pself.controls.sideMovement <= -1 * settings.main.deadzone) and not animation.isPlaying(pself, aLeft) then
         settings.debugPrint("anim start left - " .. aLeft)
+        animation.cancel(pself, aRight)
+        animation.cancel(pself, aForward)
         animation.playBlended(pself, aLeft, {
             priority = animation.PRIORITY.Storm,
             --blendMask = animation.BLEND_MASK.UpperBody,
@@ -286,6 +288,8 @@ local function animate()
         })
     elseif (pself.controls.sideMovement >= settings.main.deadzone) and not animation.isPlaying(pself, aRight) then
         settings.debugPrint("anim start right - " .. aRight)
+        animation.cancel(pself, aLeft)
+        animation.cancel(pself, aForward)
         animation.playBlended(pself, aRight, {
             priority = animation.PRIORITY.Storm,
             --blendMask = animation.BLEND_MASK.UpperBody,
@@ -294,6 +298,8 @@ local function animate()
         })
     elseif (math.abs(pself.controls.sideMovement) < settings.main.deadzone) and not animation.isPlaying(pself, aForward) then
         settings.debugPrint("anim start forward - " .. aForward)
+        animation.cancel(pself, aLeft)
+        animation.cancel(pself, aRight)
         animation.playBlended(pself, aForward, {
             priority = animation.PRIORITY.Storm,
             --blendMask = animation.BLEND_MASK.UpperBody,
