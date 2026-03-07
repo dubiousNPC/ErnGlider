@@ -15,40 +15,33 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]
-local MOD_NAME     = require("scripts.ErnGlider.ns")
-local core         = require("openmw.core")
-local pself        = require("openmw.self")
-local camera       = require('openmw.camera')
-local util         = require('openmw.util')
-local async        = require("openmw.async")
-local types        = require('openmw.types')
-local input        = require('openmw.input')
-local controls     = require('openmw.interfaces').Controls
-local nearby       = require('openmw.nearby')
-local animation    = require('openmw.animation')
-local ui           = require('openmw.ui')
-local aux_util     = require('openmw_aux.util')
-local interfaces   = require("openmw.interfaces")
-local settings     = require("scripts.ErnGlider.settings")
-local localization = core.l10n(MOD_NAME)
+local MOD_NAME           = require("scripts.ErnGlider.ns")
+local core               = require("openmw.core")
+local pself              = require("openmw.self")
+local camera             = require('openmw.camera')
+local util               = require('openmw.util')
+local async              = require("openmw.async")
+local types              = require('openmw.types')
+local input              = require('openmw.input')
+local controls           = require('openmw.interfaces').Controls
+local nearby             = require('openmw.nearby')
+local animation          = require('openmw.animation')
+local ui                 = require('openmw.ui')
+local aux_util           = require('openmw_aux.util')
+local interfaces         = require("openmw.interfaces")
+local settings           = require("scripts.ErnGlider.settings")
+local localization       = core.l10n(MOD_NAME)
+local uiInterface        = require("openmw.interfaces").UI
 
--- TODO: also show fatigue and current shield condition and turn off other hud stuff
+---@class DisplayData
+---@field dt number
+---@field speed number
+---@field conditionRatio number
+---@field fatigueRatio number
+---@field points number
 
-local kphText      = ui.create {
-    type = ui.TYPE.Text,
-    name = "speedText",
-    props = {
-        text = "0 kph",
-        textColor = util.color.rgba(.9, 0.9, 0.8, 0.9),
-        textShadow = true,
-        textShadowColor = util.color.rgba(0, 0, 0, 0.9),
-        textAlignV = ui.ALIGNMENT.Start,
-        textAlignH = ui.ALIGNMENT.Start,
-        textSize = 18,
-        relativePosition = util.vector2(1, 0),
-        anchor = util.vector2(1, 0),
-    }
-}
+---@type DisplayData?
+local currentDisplayData = nil
 
 -- from PCP-OpenMW
 -- Get a usable color value from a fallback in openmw.cfg
@@ -59,6 +52,38 @@ local function configColor(setting)
     local color = util.color.rgb(values[1] / 255, values[2] / 255, values[3] / 255)
     return color
 end
+
+local pointsText = ui.create {
+    type = ui.TYPE.Text,
+    name = "pointsText",
+    props = {
+        text = "0",
+        textColor = configColor("normal"),
+        textShadow = true,
+        textShadowColor = util.color.rgba(0, 0, 0, 0.9),
+        --textAlignV = ui.ALIGNMENT.Start,
+        --textAlignH = ui.ALIGNMENT.Start,
+        textSize = 18,
+        relativePosition = util.vector2(0.5, 0.5),
+        --anchor = util.vector2(0.5, 0.5),
+    }
+}
+
+local kphText    = ui.create {
+    type = ui.TYPE.Text,
+    name = "speedText",
+    props = {
+        text = "0 kph",
+        textColor = configColor("normal"),
+        textShadow = true,
+        textShadowColor = util.color.rgba(0, 0, 0, 0.9),
+        textAlignV = ui.ALIGNMENT.Start,
+        textAlignH = ui.ALIGNMENT.Start,
+        textSize = 18,
+        relativePosition = util.vector2(1, 0),
+        anchor = util.vector2(1, 0),
+    }
+}
 
 local function barLayout(ratio, color)
     return {
@@ -103,10 +128,25 @@ local function setRatio(elem, ratio)
     end
 end
 
-local fatigueBar         = ui.create(barLayout(0.3, configColor("fatigue")))
-local conditionBar       = ui.create(barLayout(0.7, configColor("weapon_fill")))
+local fatigueBar    = ui.create(barLayout(0.3, configColor("fatigue")))
+local conditionBar  = ui.create(barLayout(0.7, configColor("weapon_fill")))
 
-local root               = ui.create {
+local pointsElement = ui.create {
+    name = "root",
+    layer = 'HUD',
+    type = ui.TYPE.Container,
+    props = {
+        position = util.vector2(10, 10),
+        anchor = util.vector2(0, 0),
+        visible = false,
+        autoSize = true,
+    },
+    content = ui.content {
+        pointsText
+    }
+}
+
+local statusElement = ui.create {
     name = "root",
     layer = 'HUD',
     type = ui.TYPE.Container,
@@ -151,14 +191,6 @@ local root               = ui.create {
     }
 }
 
----@class DisplayData
----@field speed number
----@field conditionRatio number
----@field fatigueRatio number
-
----@type DisplayData?
-local currentDisplayData = nil
-
 ---@param data DisplayData?
 local function display(data)
     if not settings.surf.chimTricky then
@@ -169,14 +201,19 @@ local function display(data)
         -- newly hidden
         if currentDisplayData then
             settings.debugPrint("Hiding CHIM Tricky UI")
+            uiInterface.setHudVisibility(true)
             currentDisplayData = nil
-            root.layout.props.visible = false
-            root:update()
+            statusElement.layout.props.visible = false
+            statusElement:update()
+            pointsElement.layout.props.visible = false
+            pointsElement:update()
         end
         --no-op
         return
     else
-        root.layout.props.visible = true
+        uiInterface.setHudVisibility(false)
+        statusElement.layout.props.visible = true
+        pointsElement.layout.props.visible = true
     end
 
     if data.speed then
@@ -195,9 +232,19 @@ local function display(data)
     end
     conditionBar:update()
 
+    if data.points then
+        if currentDisplayData ~= nil and currentDisplayData.points ~= data.points then
+            pointsText.layout.props.text = tostring(data.points)
+            pointsText:update()
+        end
+    end
+
     --settings.debugPrint(aux_util.deepToString(data, 3))
-    root:update()
+    statusElement:update()
+    pointsElement:update()
+    local oldDT = currentDisplayData and currentDisplayData.dt or 0
     currentDisplayData = data
+    currentDisplayData.dt = currentDisplayData.dt + oldDT
 end
 
 return {

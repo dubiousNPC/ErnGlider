@@ -1,0 +1,87 @@
+uniform_float uStrength {
+    default = 0.06;
+    min = 0.0;
+    step = 0.001;
+    display_name = "Blur Strength";
+    header = "Blur";
+    static = false;
+}
+
+uniform_float uZoomBase {
+    default = 1.0;
+    min = 0.0;
+    step = 0.01;
+    display_name = "Zoom Start";
+}
+
+uniform_bool uCenterMask {
+    default = true;
+    header = "Mask";
+    display_name = "Center Mask";
+}
+
+uniform_float uMaskPower {
+    default = 2.0;
+    min = 0.0;
+    step = 0.1;
+    display_name = "Mask Power";
+}
+
+shared {
+
+}
+
+fragment main {
+
+    omw_In vec2 omw_TexCoord;
+
+    const int TAP_COUNT = 8;
+
+    void main()
+    {
+        vec4 original = omw_GetLastShader(omw_TexCoord);
+
+        vec2 offset = omw_TexCoord - vec2(0.5);
+
+        vec4 accum = vec4(0.0);
+        float weightSum = 0.0;
+
+        float scale = uZoomBase;
+
+        for (int i = 0; i < TAP_COUNT; ++i)
+        {
+            vec2 sampleUV = offset * scale + vec2(0.5);
+
+            vec4 c = omw_GetLastShader(sampleUV);
+
+            float w = 1.0 / (1.0 + float(i));   // diminishing weight
+            accum += c * w;
+            weightSum += w;
+
+            scale += uStrength * scale;         // exponential spacing
+        }
+
+        vec4 blurred = accum / weightSum;
+
+        if (uCenterMask)
+        {
+            float d = length(offset) * 2.0;
+            float mask = pow(clamp(1.0 - d, 0.0, 1.0), uMaskPower);
+
+            omw_FragColor = mix(blurred, original, mask);
+        }
+        else
+        {
+            omw_FragColor = blurred;
+        }
+    }
+}
+
+technique {
+    description = "Glider speed blur.";
+    passes = main;
+    version = "1.0";
+    author = "";
+    dynamic = true;
+    flags = hidden;
+}

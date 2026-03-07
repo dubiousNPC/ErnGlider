@@ -15,47 +15,47 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]
-local MOD_NAME                     = require("scripts.ErnGlider.ns")
-local core                         = require("openmw.core")
-local pself                        = require("openmw.self")
-local camera                       = require('openmw.camera')
-local util                         = require('openmw.util')
-local aux_util                     = require('openmw_aux.util')
-local async                        = require("openmw.async")
-local types                        = require('openmw.types')
-local input                        = require('openmw.input')
-local controls                     = require('openmw.interfaces').Controls
-local nearby                       = require('openmw.nearby')
-local animation                    = require('openmw.animation')
-local interfaces                   = require("openmw.interfaces")
-local ringbuffer                   = require("scripts.ErnGlider.ringbuffer")
-local chimtricky                   = require("scripts.ErnGlider.chimtricky")
-local settings                     = require("scripts.ErnGlider.settings")
+local MOD_NAME               = require("scripts.ErnGlider.ns")
+local core                   = require("openmw.core")
+local pself                  = require("openmw.self")
+local camera                 = require('openmw.camera')
+local util                   = require('openmw.util')
+local aux_util               = require('openmw_aux.util')
+local async                  = require("openmw.async")
+local types                  = require('openmw.types')
+local input                  = require('openmw.input')
+local controls               = require('openmw.interfaces').Controls
+local nearby                 = require('openmw.nearby')
+local animation              = require('openmw.animation')
+local interfaces             = require("openmw.interfaces")
+local ringbuffer             = require("scripts.ErnGlider.ringbuffer")
+local chimtricky             = require("scripts.ErnGlider.chimtricky")
+local settings               = require("scripts.ErnGlider.settings")
+local blur                   = require("scripts.ErnGlider.blur")
 
 -- initial momentum when starting surf
-local startMomentum                = 0.2
+local startMomentum          = 0.2
 -- downward slope bonus factor
-local slopeDownMomentumRatio       = 0.2
+local slopeDownMomentumRatio = 0.2
 -- upward slope penalty factor
-local slopeUpMomentumRatio         = 0.6
+local slopeUpMomentumRatio   = 0.6
 -- friction to decay momentum by
-local friction                     = 0.01
+local friction               = 0.01
 -- how much yaw change contributes to side movement drift
-local driftFactor                  = 3.0
+local driftFactor            = 3.0
 -- side movement is multiplied by this each frame so it decays back to 0
-local driftDecay                   = 0.9
+local driftDecay             = 0.9
 -- if momentum drops below this, we quit surfing
-local kickoutMinimumMomentum       = 0.15
+local kickoutMinimumMomentum = 0.15
 -- prevent surfing when fatigue is at this level.
-local minFatigue                   = 1
-local bigDropConditionDamageFactor = 0.08
+local minFatigue             = 1
 
-local pointsPerSlideSecond         = 10
-local pointsPerJump                = 1
-local pointsPerAirTimeSecond       = 8
-local maxSpeedPointsModifier       = 50
+local pointsPerSlideSecond   = 2
+local pointsPerJump          = 1
+local pointsPerAirTimeSecond = 8
+local maxSpeedPointsModifier = 50
 
-local persist                      = {
+local persist                = {
     applied = false,
     appliedDuration = 0,
     momentum = startMomentum,
@@ -76,9 +76,11 @@ local persist                      = {
     },
 }
 
-local fatigueStat                  = pself.type.stats.dynamic.fatigue(pself)
-local surfSpell                    = "eg_surf_1"
-local surfShieldWeightSpells       = {
+local blurShader             = blur.NewBlurShader()
+
+local fatigueStat            = pself.type.stats.dynamic.fatigue(pself)
+local surfSpell              = "eg_surf_1"
+local surfShieldWeightSpells = {
     light = {
         id = "eg_surf_light",
         effects = { 0, 1 },
@@ -111,6 +113,7 @@ local sounds         = {
     breath_in = getSoundFilePath("breath_in.mp3"),
     gravel_road = getSoundFilePath("gravel_road.mp3"),
     hit_wall = "Sound\\Fx\\body hit.wav",
+    jump_start = "Sound\\ErnGlider\\light_smack.ogg",
     land_lt = "Sound\\Fx\\FOOT\\land_lt.wav",
     land_md = "Sound\\Fx\\FOOT\\land_md.wav",
     land_hv = "Sound\\Fx\\FOOT\\land_hv.wav"
@@ -118,9 +121,9 @@ local sounds         = {
 
 local shieldBone     = "Right Foot"
 local surfAnimations = {
-    forward = "Shieldgo", --"Shieldgo",
-    left = "ShieldL",
-    right = "ShieldR"
+    forward = "runforward", --"Shieldgo",
+    left = "sneakleft",
+    right = "sneakright"
 }
 
 local function cancelSurfAnimations()
@@ -151,7 +154,7 @@ local function getShield()
 end
 
 local function getSurfWeightSpell()
-    local weight = types.Armor.records[getShield().recordId].weight
+    local weight = persist.activeShieldRecord.weight
     -- light is 4-9, medium is 10-13, heavy is 14-45
     if weight < 10 then
         return surfShieldWeightSpells.light
@@ -163,7 +166,7 @@ local function getSurfWeightSpell()
 end
 
 local function applySurfSpell()
-    local shieldModel = types.Armor.records[getShield().recordId].model
+    local shieldModel = persist.activeShieldRecord.model
     pself.type.activeSpells(pself):add({
         id = surfSpell,
         effects = { 0, 1, 2 },
@@ -174,23 +177,6 @@ local function applySurfSpell()
     pself.type.activeSpells(pself):add(getSurfWeightSpell())
     animation.addVfx(pself, shieldModel,
         { loop = true, boneName = shieldBone, vfxId = "surf", useAmbientLight = false })
-
-    -- this should be re-applied often if it is not playing or something.
-    --[[
-    interfaces.AnimationController.playBlendedAnimation('sneakforward', {
-        priority = animation.PRIORITY.Storm,
-        blendMask = animation.BLEND_MASK.UpperBody,
-        autoDisable = false,
-    })]]
-
-    -- This actually prevents movement!
-    --[[
-    interfaces.AnimationController.playBlendedAnimation('idlesneak', {
-        priority = animation.PRIORITY.Storm,
-        blendMask = animation.BLEND_MASK.LowerBody,
-        autoDisable = true,
-    })
-    ]]
 end
 
 local forward = util.vector3(0.0, 1.0, 0.0)
@@ -262,8 +248,8 @@ local function calcPoints(wipeout)
     if wipeout then
         total = total / 2
     end
-
-    print("Surf points: " .. total)
+    total = (math.ceil(total) * 100)
+    --print("Surf points: " .. total)
     return total
 end
 
@@ -316,6 +302,7 @@ local function removeSurf(wipeout)
         blendMask = animation.BLEND_MASK.LowerBody,
         autoDisable = true,
     })
+    blurShader:setEnabled(false)
 
     calcPoints(wipeout)
 
@@ -367,7 +354,10 @@ local function applySurf()
     -- apply spell
     applySurfSpell()
 
-    -- todo: unequip then re-equip shield
+    blurShader:setEnabled(true)
+
+    -- todo: unequip then re-equip shield?
+    -- maybe just override the shield vfx for sheath mod somehow?
 end
 
 local function onHit(victimActor)
@@ -440,18 +430,16 @@ local function animate()
     end
 
     if (pself.controls.sideMovement <= -1 * settings.main.deadzone) and not animation.isPlaying(pself, surfAnimations.left) then
-        animation.cancel(pself, surfAnimations.forward)
         animation.cancel(pself, surfAnimations.right)
         if not animation.isPlaying(pself, surfAnimations.left) then
             settings.debugPrint("anim start left - " .. surfAnimations.left)
-            animation.playBlended(pself, surfAnimations.left, fullAnimationOptions)
+            animation.playBlended(pself, surfAnimations.left, armsAnimationOptions)
         end
     elseif (pself.controls.sideMovement >= settings.main.deadzone) and not animation.isPlaying(pself, surfAnimations.right) then
         animation.cancel(pself, surfAnimations.left)
-        animation.cancel(pself, surfAnimations.forward)
         if not animation.isPlaying(pself, surfAnimations.right) then
             settings.debugPrint("anim start right - " .. surfAnimations.right)
-            animation.playBlended(pself, surfAnimations.right, fullAnimationOptions)
+            animation.playBlended(pself, surfAnimations.right, armsAnimationOptions)
         end
     elseif (math.abs(pself.controls.sideMovement) < settings.main.deadzone) then
         animation.cancel(pself, surfAnimations.left)
@@ -510,6 +498,10 @@ local function onUpdate(dt)
         if justJumped then
             persist.startHeightOnCurrentJump = getFootPos().z
             persist.maxHeightOnCurrentJump = persist.startHeightOnCurrentJump
+            core.sound.playSoundFile3d(sounds.jump_start, pself, {
+                volume = settings.main.volume,
+                loop = false,
+            })
         end
 
         -- track landing
@@ -518,14 +510,15 @@ local function onUpdate(dt)
             settings.debugPrint("Landed!")
             local dropHeight = (persist.maxHeightOnCurrentJump - persist.currentFootPos.z)
             local acrobatics = pself.type.stats.skills.acrobatics(pself).modified
-            local weight = types.Armor.records[getShield().recordId].weight
+            local weight = persist.activeShieldRecord.weight
             -- heavy shields take more damage on drops because they generally have
             -- more total Condition, and also Slowfall.
             local safeHeight = pself:getBoundingBox().halfSize.z * util.remap(acrobatics, 0, 100, 0.25, 4) *
                 math.max(0.1, 1 - (weight / 50))
             if dropHeight > 0 and dropHeight > safeHeight then
-                settings.debugPrint("Big drop of height " .. tostring(dropHeight))
-                conditionDebt = conditionDebt + (dropHeight - safeHeight) * bigDropConditionDamageFactor
+                local damage = math.ceil(math.sqrt((dropHeight - safeHeight)) * settings.surf.fallCost)
+                conditionDebt = conditionDebt + damage
+                settings.debugPrint("Big drop! Height: " .. tostring(dropHeight) .. ", damage: " .. tostring(damage))
                 -- play hard landing sound
                 core.sound.playSoundFile3d(sounds.land_hv, pself, {
                     volume = settings.main.volume,
@@ -539,6 +532,8 @@ local function onUpdate(dt)
                     loop = false,
                 })
             end
+            animation.addVfx(pself, "meshes/ernglider/poof.nif",
+                { loop = false, boneName = shieldBone, vfxId = "poof", useAmbientLight = false })
         elseif not persist.landed then
             -- in air
             persist.maxHeightOnCurrentJump = math.max(persist.maxHeightOnCurrentJump, persist.currentFootPos.z)
@@ -564,7 +559,7 @@ local function onUpdate(dt)
         conditionDebt = conditionDebt + (settings.surf.conditionCost * dt)
         if conditionDebt > 1 then
             local whole = math.floor(conditionDebt)
-            conditionDebt = conditionDebt - whole
+            conditionDebt = math.max(0, conditionDebt - whole)
             core.sendGlobalEvent(MOD_NAME .. 'onDamageItem', {
                 item = getShield(),
                 amount = whole,
@@ -589,11 +584,15 @@ local function onUpdate(dt)
         end
         -- track duration of surf
         persist.appliedDuration = persist.appliedDuration + dt
+        local avgSpeed = currentSpeed:getAverage()
+        blurShader:update(util.clamp(util.remap(avgSpeed, 15, 200, 0, 1), 0, 0.005))
 
         chimtricky.display({
-            speed = currentSpeed:getAverage(),
+            dt = dt,
+            speed = avgSpeed,
             conditionRatio = types.Item.itemData(getShield()).condition / persist.activeShieldRecord.health,
-            fatigueRatio = fatigueStat.current / fatigueStat.base
+            fatigueRatio = fatigueStat.current / fatigueStat.base,
+            points = calcPoints(false),
         })
     else
         -- not currently surfing
@@ -628,11 +627,17 @@ local function onFrame(dt)
                 removeSurf()
                 return
             end
-            persist.points.slidePoints = persist.points.slidePoints + pointsPerSlideSecond * dt * persist.momentum
+            if persist.momentum > 0.3 then
+                persist.points.slidePoints = persist.points.slidePoints + pointsPerSlideSecond * dt * persist.momentum
+            end
         else
-            persist.points.airPoints = persist.points.airPoints + pointsPerAirTimeSecond * dt * persist.momentum
+            if persist.momentum > 0.2 then
+                persist.points.airPoints = persist.points.airPoints + pointsPerAirTimeSecond * dt * persist.momentum
+            end
         end
 
+        -- Don't give direct control over strafing.
+        -- If the camera swings too much, automatically mix in strafing.
         local startingYaw = pself.controls.yawChange
         if math.abs(startingYaw) < 0.05 then
             startingYaw = 0

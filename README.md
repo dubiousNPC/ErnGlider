@@ -50,21 +50,23 @@ Masterwork glider: `setJournalIndex eg_glider 31`
 - Wind 1 Loop by jasoneweber -- https://freesound.org/s/179110/ -- License: Attribution 3.0
 - Breath In by mooncubedesign -- https://freesound.org/s/319247/ -- License: Creative Commons 0
 - Gravel Road by seth-m -- https://freesound.org/people/seth-m/sounds/341069/ -- License: Creative Commons 0
+- Landing On The Ground [2] by SoundDesignForYou -- https://freesound.org/people/SoundDesignForYou/sounds/646660/ -- License: Creative Commons 0
 
 ### Meshes & Textures
 
 - Gliders by Semaro, used with explicit permission.
-- Textures derived from TES3: Morrowind.
+- Textures by Wareya, used with explicit permission.
+- Dust cloud by Kronbits -- https://kronbits.itch.io/particle-pack -- License: Creative Commons 0
 
 ## Animations
 
-- openmw-animated-levitation -- https://gitlab.com/fallchildren/openmw-animated-levitation -- GPL
+- openmw-animated-levitation -- https://gitlab.com/fallchildren/openmw-animated-levitation -- License: GPL
 - glider by Dubious, used with explicit permission.
 
 ### Third-Party Code
 
-- openmw-animated-levitation -- https://gitlab.com/fallchildren/openmw-animated-levitation -- GPL
-- PCP-OpenMW by Qlonever -- https://github.com/Qlonever/PCP-OpenMW) -- MIT License
+- openmw-animated-levitation -- https://gitlab.com/fallchildren/openmw-animated-levitation -- License: GPL
+- PCP-OpenMW by Qlonever -- https://github.com/Qlonever/PCP-OpenMW) -- License: MIT
 
 ## TODO
 

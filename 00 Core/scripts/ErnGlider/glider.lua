@@ -355,7 +355,7 @@ local function onUpdate(dt)
             -- kick out of gliding if we hit min fatigue
             -- do this so you don't fall unconscious while flying
             if newFatigue <= minFatigue then
-                fatigueStat.current = minFatigue
+                fatigueStat.current = math.max(0, minFatigue)
                 removeGlider()
                 return
             end

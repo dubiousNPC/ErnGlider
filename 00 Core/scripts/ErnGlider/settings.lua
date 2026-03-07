@@ -65,6 +65,13 @@ local function init()
                 }
             },
             {
+                key = "shaders",
+                name = "shadersName",
+                description = "shadersDescription",
+                default = true,
+                renderer = "checkbox",
+            },
+            {
                 key = "debugMode",
                 name = "debugName",
                 default = false,
@@ -133,8 +140,21 @@ local function init()
                 }
             },
             {
+                key = "fallCost",
+                name = "fallCostName",
+                description = "fallCostDescription",
+                default = 0.25,
+                renderer = "number",
+                argument = {
+                    integer = false,
+                    min = 0,
+                    max = 100
+                }
+            },
+            {
                 key = "chimTricky",
                 name = "chimTrickyName",
+                description = "chimTrickyDescription",
                 default = false,
                 renderer = "checkbox",
             },
