@@ -1,6 +1,6 @@
 --[[
 ErnGlider for OpenMW.
-Copyright (C) 2025 Erin Pentecost
+Copyright (C) 2026 Erin Pentecost
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -289,7 +289,11 @@ local function animate()
     local aLeft = glideranim[cachedCurrentGlider].left
     local aRight = glideranim[cachedCurrentGlider].right
     local aForward = glideranim[cachedCurrentGlider].forward
-    if (pself.controls.sideMovement <= -1 * settings.main.deadzone) and not animation.isPlaying(pself, aLeft) then
+    if types.Actor.isOnGround(pself) then
+        animation.cancel(pself, aLeft)
+        animation.cancel(pself, aRight)
+        animation.cancel(pself, aForward)
+    elseif (pself.controls.sideMovement <= -1 * settings.main.deadzone) and not animation.isPlaying(pself, aLeft) then
         settings.debugPrint("anim start left - " .. aLeft)
         animation.cancel(pself, aRight)
         animation.cancel(pself, aForward)

@@ -1,6 +1,6 @@
 --[[
 ErnGlider for OpenMW.
-Copyright (C) 2025 Erin Pentecost
+Copyright (C) 2026 Erin Pentecost
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -15,23 +15,9 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]
-local MOD_NAME     = require("scripts.ErnGlider.ns")
-local core         = require("openmw.core")
-local pself        = require("openmw.self")
-local camera       = require('openmw.camera')
-local util         = require('openmw.util')
-local async        = require("openmw.async")
-local types        = require('openmw.types')
-local input        = require('openmw.input')
-local controls     = require('openmw.interfaces').Controls
-local nearby       = require('openmw.nearby')
-local animation    = require('openmw.animation')
-local ui           = require('openmw.ui')
-local aux_util     = require('openmw_aux.util')
-local interfaces   = require("openmw.interfaces")
-local settings     = require("scripts.ErnGlider.settings")
-local localization = core.l10n(MOD_NAME)
-local uiInterface  = require("openmw.interfaces").UI
+local util       = require('openmw.util')
+local ui         = require('openmw.ui')
+local interfaces = require("openmw.interfaces")
 
 local function barLayout(ratio, color, flashColor)
     return {

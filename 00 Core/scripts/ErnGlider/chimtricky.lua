@@ -1,6 +1,6 @@
 --[[
 ErnGlider for OpenMW.
-Copyright (C) 2025 Erin Pentecost
+Copyright (C) 2026 Erin Pentecost
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -178,7 +178,6 @@ local function display(data)
             pointsElement.layout.props.visible = false
             pointsElement:update()
         end
-        --no-op
         return
     else
         -- newly visible

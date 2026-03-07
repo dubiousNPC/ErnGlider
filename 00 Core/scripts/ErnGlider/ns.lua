@@ -1,6 +1,6 @@
 --[[
 ErnGlider for OpenMW.
-Copyright (C) Erin Pentecost 2026
+Copyright (C) 2026 Erin Pentecost
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
