@@ -30,6 +30,8 @@ Surfing only works while outside. While in an unreadied stance (your weapon is s
 
 If you're using `Ben's Skyships (OpenMW)`, you can instead just talk to a glider expert.
 
+If you're on Vvardenfell, you can just talk to Louis Beauchamp.
+
 <details>
 
 <summary>Console Commands</summary>
