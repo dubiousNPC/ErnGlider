@@ -76,10 +76,4 @@ Masterwork glider: `setJournalIndex eg_glider 31`
 - Gliding animation.
 - Extra boost when over lava?
 - shield surf animation
-- un-equip shield while surfing and then re-equip
-
-
-/home/ern/tes3/mods/Fonts/AlternativeTrueTypeFonts/fonts/Pelagiad.ttf
-/home/ern/tes3/mods/Fonts/AlternativeTrueTypeFonts/fonts/Pelagiad.ttf
-
-magick -gravity center -background transparent -fill white -size 128x64 -font /home/ern/tes3/mods/Fonts/AlternativeTrueTypeFonts/fonts/Pelagiad.ttf caption:"kph" kph.png
+- un-equip shield while surfing and then re-equip?

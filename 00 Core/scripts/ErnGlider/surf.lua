@@ -49,6 +49,8 @@ local driftDecay             = 0.9
 local kickoutMinimumMomentum = 0.15
 -- prevent surfing when fatigue is at this level.
 local minFatigue             = 1
+-- if speed drops below this kph, start reducing momentum
+local kickoutMinimumSpeed    = 3
 
 local pointsPerSlideSecond   = 2
 local pointsPerJump          = 1
@@ -269,6 +271,7 @@ local function removeSurf(wipeout)
     pself.controls.movement = 0
     -- todo: this will probably be bad
     pself.controls.run = false
+    currentSpeed:reset()
     -- remove spell effects
     local spellsToRemove = {
         [surfSpell] = true,
@@ -548,12 +551,31 @@ local function onUpdate(dt)
         persist.lastFootPos = persist.currentFootPos
         persist.currentFootPos = getFootPos()
 
-        local xyDist = util.vector2(persist.lastFootPos.x - persist.currentFootPos.x,
-            persist.lastFootPos.y - persist.currentFootPos.y):length()
-        persist.slope = (persist.currentFootPos.z - persist.lastFootPos.z) / xyDist
+        local footTravelVec = util.vector2(persist.currentFootPos.x - persist.lastFootPos.x,
+            persist.currentFootPos.y - persist.lastFootPos.y)
 
-        -- game unit / second to km / hour factor is 0.05112
-        currentSpeed:push(xyDist / dt * 0.05112)
+        local facingVec3 = pself.rotation:apply(forward):normalize()
+        local facingVec2 = util.vector2(facingVec3.x, facingVec3.y)
+        local travelDot = facingVec2:dot(footTravelVec:normalize())
+        --[[print("facing (" .. string.format("%.2f", facingVec2.x) .. ", " .. string.format("%.2f", facingVec2.y) .. ")" ..
+            "foot (" ..
+            string.format("%.2f", footTravelVec.x) .. ", " .. string.format("%.2f", footTravelVec.y) .. ")" ..
+            "dot (" .. string.format("%.2f", travelDot) .. ")")]]
+        local xyDist = footTravelVec:length()
+
+        if travelDot < 0 and types.Actor.isOnGround(pself) then
+            -- we are moving backwards!
+            -- keep slope neutral since we might be bouncing against a wall.
+            -- friction or min speed kickout will eventually exit surf
+            -- if we stay backwards
+            --settings.debugPrint("Backwards!")
+            currentSpeed:push(0)
+            persist.slope = 0
+        else
+            -- game unit / second to km / hour factor is 0.05112
+            currentSpeed:push((xyDist / dt) * 0.05112)
+            persist.slope = travelDot * (persist.currentFootPos.z - persist.lastFootPos.z) / xyDist
+        end
 
         -- only remove whole units of condition
         conditionDebt = conditionDebt + (settings.surf.conditionCost * dt)
@@ -584,7 +606,17 @@ local function onUpdate(dt)
         end
         -- track duration of surf
         persist.appliedDuration = persist.appliedDuration + dt
+
+        -- speed-related stuff
         local avgSpeed = currentSpeed:getAverage()
+
+        -- catch-all for weird situations
+        if avgSpeed < kickoutMinimumSpeed and types.Actor.isOnGround(pself) then
+            local penalty = util.remap(avgSpeed, 0, kickoutMinimumSpeed, 0, 0.1)
+            settings.debugPrint("Too slow! Penalty: " .. tostring(penalty))
+            persist.momentum = util.clamp(persist.momentum - penalty, 0, 1)
+        end
+
         blurShader:update(util.clamp(util.remap(avgSpeed, 15, 200, 0, 1), 0, 0.005))
 
         chimtricky.display({

@@ -285,6 +285,14 @@ local glideAnimOptions = {
     autoDisable = true,
 }
 
+
+local function playGliderAnim(newAnim)
+    if not animation.isPlaying(pself, newAnim) then
+        settings.debugPrint("anim start - " .. newAnim)
+        animation.playBlended(pself, newAnim, glideAnimOptions)
+    end
+end
+
 local function animate()
     local aLeft = glideranim[cachedCurrentGlider].left
     local aRight = glideranim[cachedCurrentGlider].right
@@ -293,21 +301,18 @@ local function animate()
         animation.cancel(pself, aLeft)
         animation.cancel(pself, aRight)
         animation.cancel(pself, aForward)
-    elseif (pself.controls.sideMovement <= -1 * settings.main.deadzone) and not animation.isPlaying(pself, aLeft) then
-        settings.debugPrint("anim start left - " .. aLeft)
+    elseif (pself.controls.sideMovement <= -1 * settings.main.deadzone) then
         animation.cancel(pself, aRight)
         animation.cancel(pself, aForward)
-        animation.playBlended(pself, aLeft, glideAnimOptions)
-    elseif (pself.controls.sideMovement >= settings.main.deadzone) and not animation.isPlaying(pself, aRight) then
-        settings.debugPrint("anim start right - " .. aRight)
+        playGliderAnim(aLeft)
+    elseif (pself.controls.sideMovement >= settings.main.deadzone) then
         animation.cancel(pself, aLeft)
         animation.cancel(pself, aForward)
-        animation.playBlended(pself, aRight, glideAnimOptions)
-    elseif (math.abs(pself.controls.sideMovement) < settings.main.deadzone) and not animation.isPlaying(pself, aForward) then
-        settings.debugPrint("anim start forward - " .. aForward)
+        playGliderAnim(aRight)
+    elseif (math.abs(pself.controls.sideMovement) < settings.main.deadzone) then
         animation.cancel(pself, aLeft)
         animation.cancel(pself, aRight)
-        animation.playBlended(pself, aForward, glideAnimOptions)
+        playGliderAnim(aForward)
     end
 end
 

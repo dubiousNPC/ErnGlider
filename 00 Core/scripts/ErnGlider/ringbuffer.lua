@@ -38,8 +38,10 @@ function RingBuffer.new(size)
 end
 
 function RingBuffer:reset()
-    self.index = 1
+    self.index  = 1
     self.values = emptyBuffer(self.size)
+    self.sum    = 0
+    self.count  = 0
 end
 
 function RingBuffer:push(v)
