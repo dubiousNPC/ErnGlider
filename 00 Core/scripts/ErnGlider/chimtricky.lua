@@ -30,6 +30,7 @@ local ui                 = require('openmw.ui')
 local aux_util           = require('openmw_aux.util')
 local interfaces         = require("openmw.interfaces")
 local settings           = require("scripts.ErnGlider.settings")
+local bar                = require("scripts.ErnGlider.bar")
 local localization       = core.l10n(MOD_NAME)
 local uiInterface        = require("openmw.interfaces").UI
 
@@ -85,51 +86,20 @@ local kphText    = ui.create {
     }
 }
 
-local function barLayout(ratio, color)
-    return {
-        type = ui.TYPE.Widget,
-        name = 'bar',
-        template = interfaces.MWUI.templates.borders,
-        props = {
-            size = util.vector2(20, 100),
-        },
-        content = ui.content {
-            {
-                type = ui.TYPE.Image,
-                name = 'barContainer',
-                props = {
-                    resource = ui.texture { path = 'white' },
-                    relativePosition = util.vector2(0, 0),
-                    relativeSize = util.vector2(1, 1),
-                    alpha = 0.7,
-                    color = util.color.rgb(0.1, 0.1, 0.1),
-                },
-                events = {},
-            },
-            {
-                type = ui.TYPE.Image,
-                name = 'barFill',
-                props = {
-                    resource = ui.texture { path = 'white' },
-                    anchor = util.vector2(0, 1),
-                    relativePosition = util.vector2(0, 1),
-                    relativeSize = util.vector2(1, ratio),
-                    alpha = 0.7,
-                    color = color,
-                },
-            },
-        }
-    }
+
+local function lerpColor(a, b, t)
+    return util.color.rgba(
+        a.r + (b.r - a.r) * t,
+        a.g + (b.g - a.g) * t,
+        a.b + (b.b - a.b) * t,
+        a.a + (b.a - a.a) * t
+    )
 end
 
-local function setRatio(elem, ratio)
-    if elem.layout.content.barFill.props.relativeSize.y ~= ratio then
-        elem.layout.content.barFill.props.relativeSize = util.vector2(1, ratio)
-    end
-end
-
-local fatigueBar    = ui.create(barLayout(0.3, configColor("fatigue")))
-local conditionBar  = ui.create(barLayout(0.7, configColor("weapon_fill")))
+local fatigueBar    = bar.NewBar(1, configColor("fatigue"),
+    lerpColor(configColor("fatigue"), util.color.rgba(0.9, 0.9, 0.9, 1), 0.7))
+local conditionBar  = bar.NewBar(1, configColor("weapon_fill"),
+    lerpColor(configColor("weapon_fill"), util.color.rgba(0.9, 0.9, 0.9, 1), 0.7))
 
 local pointsElement = ui.create {
     name = "root",
@@ -180,9 +150,9 @@ local statusElement = ui.create {
                     },
                     content = ui.content {
                         { props = { size = util.vector2(4, 0) } },
-                        fatigueBar,
+                        fatigueBar.elem,
                         { props = { size = util.vector2(4, 0) } },
-                        conditionBar,
+                        conditionBar.elem,
                         { props = { size = util.vector2(4, 0) } }
                     }
                 },
@@ -211,9 +181,14 @@ local function display(data)
         --no-op
         return
     else
-        uiInterface.setHudVisibility(false)
-        statusElement.layout.props.visible = true
-        pointsElement.layout.props.visible = true
+        -- newly visible
+        if not currentDisplayData then
+            uiInterface.setHudVisibility(false)
+            statusElement.layout.props.visible = true
+            pointsElement.layout.props.visible = true
+            fatigueBar:reset(data.fatigueRatio or 1)
+            conditionBar:reset(data.conditionRatio or 1)
+        end
     end
 
     if data.speed then
@@ -224,13 +199,11 @@ local function display(data)
     end
 
     if data.fatigueRatio then
-        setRatio(fatigueBar, data.fatigueRatio)
+        fatigueBar:onUpdate(data.dt, data.fatigueRatio)
     end
-    fatigueBar:update()
     if data.conditionRatio then
-        setRatio(conditionBar, data.conditionRatio)
+        conditionBar:onUpdate(data.dt, data.conditionRatio)
     end
-    conditionBar:update()
 
     if data.points then
         if currentDisplayData ~= nil and currentDisplayData.points ~= data.points then
