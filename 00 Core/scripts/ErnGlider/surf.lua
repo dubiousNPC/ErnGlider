@@ -511,12 +511,13 @@ local function onUpdate(dt)
         if justLanded then
             persist.landed = true
             settings.debugPrint("Landed!")
-            local dropHeight = (persist.maxHeightOnCurrentJump - persist.currentFootPos.z)
+            local dropHeight = (persist.maxHeightOnCurrentJump - persist.currentFootPos.z) /
+                pself:getBoundingBox().halfSize.z
             local acrobatics = pself.type.stats.skills.acrobatics(pself).modified
             local weight = persist.activeShieldRecord.weight
             -- heavy shields take more damage on drops because they generally have
             -- more total Condition, and also Slowfall.
-            local safeHeight = pself:getBoundingBox().halfSize.z * util.remap(acrobatics, 0, 100, 0.25, 4) *
+            local safeHeight = 6 * util.remap(acrobatics, 0, 100, 0.1, 1) *
                 math.max(0.1, 1 - (weight / 50))
             if dropHeight > 0 and dropHeight > safeHeight then
                 local damage = math.ceil(math.sqrt((dropHeight - safeHeight)) * settings.surf.fallCost)
