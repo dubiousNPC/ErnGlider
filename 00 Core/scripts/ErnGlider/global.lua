@@ -21,6 +21,8 @@ local world              = require("openmw.world")
 local interfaces         = require("openmw.interfaces")
 local updraftdata        = require("scripts.ErnGlider.updraft.load")
 local kerneldensityfield = require("scripts.ErnGlider.kerneldensityfield")
+local aux_util           = require('openmw_aux.util')
+local util               = require('openmw.util')
 
 local fieldsByCell       = {}
 
@@ -35,17 +37,31 @@ local function onGetUpdraftStrength(data)
     if not fieldsByCell[data.player.cell.id] then
         -- load up the map!
         local kdf = kerneldensityfield.new()
-        for _, staticObj in ipairs(data.player.cell:getAll(types.Static)) do
-            local updraftDataVal = updraftdata[staticObj.recordId]
+        local check = function(obj)
+            --print("checking " .. obj.recordId)
+            local updraftDataVal = updraftdata[obj.recordId]
             if updraftDataVal then
-                kdf:addKernel(staticObj.id, staticObj.position, updraftDataVal.radius, updraftDataVal.strength)
+                print("found updraft source " .. obj.recordId .. ": " .. aux_util.deepToString(updraftDataVal))
+                local box = obj:getBoundingBox()
+                local bottom = box.center + util.vector3(0, 0, -box.halfSize.z)
+                kdf:addKernel(obj.id, bottom, updraftDataVal.radius * obj.scale,
+                    updraftDataVal.strength * obj.scale)
             end
         end
+
+        for _, staticObj in ipairs(data.player.cell:getAll(types.Static)) do
+            check(staticObj)
+        end
+        for _, activObj in ipairs(data.player.cell:getAll(types.Activator)) do
+            check(activObj)
+        end
         fieldsByCell[data.player.cell.id] = kdf
+        --print(aux_util.deepToString(kdf, 3))
     end
 
     -- return val
-    local updraftVal = fieldsByCell[data.player.cell.id]:calculate(data.player.position)
+    local updraftVal = fieldsByCell[data.player.cell.id]:max(data.player.position)
+    --print("player updraft value: " .. tostring(updraftVal))
     if updraftVal > 0 then
         data.player:sendEvent(MOD_NAME .. "onUpdraft", { value = updraftVal })
     end

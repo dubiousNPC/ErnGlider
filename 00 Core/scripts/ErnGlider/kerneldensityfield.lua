@@ -77,16 +77,33 @@ function ScalarField:reset()
 end
 
 ---@param pos util.vector3
+---@param fn fun(a: number, b: number): number
 ---@return number
-function ScalarField:calculate(pos)
-    local sum = 0
-    for _, kern in ipairs(self.kernels) do
+function ScalarField:calculate(pos, fn)
+    local out = 0
+    for _, kern in pairs(self.kernels) do
         if self.filter(pos, kern) then
             local dist = (pos.x - kern.pos.x) ^ 2 + (pos.y - kern.pos.y) ^ 2
-            sum = sum + kern.fn(dist)
+            out = fn(out, kern.fn(dist))
         end
     end
-    return sum
+    return out
+end
+
+---@param pos util.vector3
+---@return number
+function ScalarField:sum(pos)
+    return self:calculate(pos, function(a, b)
+        return a + b
+    end)
+end
+
+---@param pos util.vector3
+---@return number
+function ScalarField:max(pos)
+    return self:calculate(pos, function(a, b)
+        return math.max(a, b)
+    end)
 end
 
 return {

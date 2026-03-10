@@ -1,6 +1,120 @@
 # This file has a bunch of record id, strength, and radius value for updrafts.
 # All yaml files in this directory will be merged together, so you can
 # add new files in a patch mod and they will be included automatically.
-vent:
-  radius: 500
+# The record ids should all be lowercased in these files.
+
+light_torch_01:
+  radius: 100
+  strength: 5
+
+# there are probably a lot more lava vents etc
+in_lava_1024_01:
+  radius: 250
+  strength: 500
+
+act_terrain_lava_ventlg:
+  radius: 250
+  strength: 10
+act_terrain_lava_vent:
+  radius: 250
+  strength: 8
+
+ab_fx_lava1024:
+  radius: 250
+  strength: 10
+
+terrain_ashmire_02:
+  radius: 250
+  strength: 5
+
+ab_fx_lava256rnd:
+  radius: 250
+  strength: 10
+
+ab_fx_lava4096:
+  radius: 250
+  strength: 10
+
+ab_fx_lavabubble:
+  radius: 100
+  strength: 10
+
+ab_fx_lavabubbles:
+  radius: 100
+  strength: 10
+
+ab_fx_lavafall00:
+  radius: 200
+  strength: 10
+
+ab_fx_lavafall01:
+  radius: 200
+  strength: 10
+
+ab_fx_lavamagma1024:
+  radius: 200
+  strength: 10
+
+ab_fx_lavamagma4096:
+  radius: 200
+  strength: 10
+
+ab_fx_lavaripple:
+  radius: 250
+  strength: 10
+
+ab_fx_lavatrans00:
+  radius: 200
+  strength: 10
+
+ab_fx_sulfurmist:
+  radius: 80
+  strength: 10
+
+ab_in_cavelavalavapool:
+  radius: 200
+  strength: 10
+
+ab_in_cavepyspoutfire:
+  radius: 150
+  strength: 10
+
+ab_in_cavepyspoutlava00:
+  radius: 250
+  strength: 10
+
+ab_in_cavepyventsteam01:
+  radius: 50
+  strength: 10
+
+ab_in_cavepyventsteam02:
+  radius: 50
+  strength: 10
+
+ab_in_lavapool01:
+  radius: 200
+  strength: 10
+
+ab_fx_lavafire:
+  radius: 50
+  strength: 10
+
+ab_fx_lavamist:
+  radius: 50
+  strength: 10
+
+ab_in_cavepylavapool:
+  radius: 200
+  strength: 10
+
+ab_in_lavacrust01:
+  radius: 100
+  strength: 10
+
+ab_in_lavacrust02:
+  radius: 100
+  strength: 10
+
+ab_in_lavacrust03:
+  radius: 100
   strength: 10
