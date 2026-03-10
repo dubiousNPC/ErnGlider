@@ -15,20 +15,21 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]
-local MOD_NAME    = require("scripts.ErnGlider.ns")
-local core        = require("openmw.core")
-local pself       = require("openmw.self")
-local camera      = require('openmw.camera')
-local util        = require('openmw.util')
-local async       = require("openmw.async")
-local types       = require('openmw.types')
-local input       = require('openmw.input')
-local controls    = require('openmw.interfaces').Controls
-local nearby      = require('openmw.nearby')
-local animation   = require('openmw.animation')
-local aux_util    = require('openmw_aux.util')
-local interfaces  = require("openmw.interfaces")
-local settings    = require("scripts.ErnGlider.settings")
+local MOD_NAME   = require("scripts.ErnGlider.ns")
+local core       = require("openmw.core")
+local pself      = require("openmw.self")
+local camera     = require('openmw.camera')
+local util       = require('openmw.util')
+local async      = require("openmw.async")
+local types      = require('openmw.types')
+local input      = require('openmw.input')
+local controls   = require('openmw.interfaces').Controls
+local nearby     = require('openmw.nearby')
+local animation  = require('openmw.animation')
+local aux_util   = require('openmw_aux.util')
+local interfaces = require("openmw.interfaces")
+local settings   = require("scripts.ErnGlider.settings")
+
 
 local glideranim  = require("scripts.ErnGlider.glideranim")
 
@@ -346,6 +347,10 @@ local function onHit(victimActor)
     end
 end
 
+local function onUpdraft(data)
+    settings.debugPrint("updraft! value: " .. tostring(data.value))
+end
+
 local rayCastDelay = 0
 
 local function onUpdate(dt)
@@ -386,6 +391,10 @@ local function onUpdate(dt)
                 onHit(actor)
                 return
             end
+
+            -- check for updrafts
+            core.sendGlobalEvent(MOD_NAME .. "onGetUpdraftStrength", {
+                player = pself })
         end
         -- put hands up
         animate()
@@ -415,6 +424,9 @@ return {
         end,
         remove = removeGlider,
         apply = applyGlider,
+    },
+    eventHandlers = {
+        [MOD_NAME .. "onUpdraft"] = onUpdraft,
     },
     engineHandlers = {
         onInit = onInit,

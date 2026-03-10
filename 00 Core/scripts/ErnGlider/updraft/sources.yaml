@@ -1,0 +1,6 @@
+# This file has a bunch of record id, strength, and radius value for updrafts.
+# All yaml files in this directory will be merged together, so you can
+# add new files in a patch mod and they will be included automatically.
+vent:
+  radius: 500
+  strength: 10

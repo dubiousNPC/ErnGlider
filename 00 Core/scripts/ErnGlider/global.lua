@@ -15,10 +15,41 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]
-local MOD_NAME = require("scripts.ErnGlider.ns")
-local types = require("openmw.types")
-local world = require("openmw.world")
-local interfaces = require("openmw.interfaces")
+local MOD_NAME           = require("scripts.ErnGlider.ns")
+local types              = require("openmw.types")
+local world              = require("openmw.world")
+local interfaces         = require("openmw.interfaces")
+local updraftdata        = require("scripts.ErnGlider.updraft.load")
+local kerneldensityfield = require("scripts.ErnGlider.kerneldensityfield")
+
+local fieldsByCell       = {}
+
+local function onGetUpdraftStrength(data)
+    if not data then
+        error("onGetUpdraftStrength.data is nil")
+    end
+    if not data.player then
+        error("onGetUpdraftStrength.data.player is nil")
+    end
+
+    if not fieldsByCell[data.player.cell.id] then
+        -- load up the map!
+        local kdf = kerneldensityfield.new()
+        for _, staticObj in ipairs(data.player.cell:getAll(types.Static)) do
+            local updraftDataVal = updraftdata[staticObj.recordId]
+            if updraftDataVal then
+                kdf:addKernel(staticObj.id, staticObj.position, updraftDataVal.radius, updraftDataVal.strength)
+            end
+        end
+        fieldsByCell[data.player.cell.id] = kdf
+    end
+
+    -- return val
+    local updraftVal = fieldsByCell[data.player.cell.id]:calculate(data.player.position)
+    if updraftVal > 0 then
+        data.player:sendEvent(MOD_NAME .. "onUpdraft", { value = updraftVal })
+    end
+end
 
 
 local function onHitByGlider(data)
@@ -37,5 +68,6 @@ return {
     eventHandlers = {
         [MOD_NAME .. 'onHitByGlider'] = onHitByGlider,
         [MOD_NAME .. 'onDamageItem'] = onDamageItem,
+        [MOD_NAME .. 'onGetUpdraftStrength'] = onGetUpdraftStrength,
     }
 }
