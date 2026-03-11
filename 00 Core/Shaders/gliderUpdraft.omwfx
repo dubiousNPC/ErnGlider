@@ -1,0 +1,74 @@
+uniform_float uStrength {
+    default = 0.5;
+    min = 0.0;
+    step = 0.01;
+    display_name = "Wind Strength";
+    static = false;
+}
+
+uniform_float uSpeed {
+    default = 1.0;
+    min = 0.0;
+    step = 0.01;
+    display_name = "Wind Speed";
+}
+
+uniform_float uTime {
+    default = 0.0;
+    static = false;
+}
+
+shared {
+
+}
+
+fragment main {
+
+    omw_In vec2 omw_TexCoord;
+
+    float hash(vec2 p)
+    {
+        return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453);
+    }
+
+    void main()
+    {
+        vec2 uv = omw_TexCoord;
+
+        float t = uTime * uSpeed;
+
+        vec4 color = omw_GetLastShader(uv);
+
+        /* ---------- PARTICLES ---------- */
+
+        vec2 particleUV = omw_TexCoord;
+
+        /* upward motion */
+        particleUV.y -= t * 0.2;
+
+        vec2 cell = floor(particleUV * 35.0);
+        float rnd = hash(cell);
+
+        float particle = step(0.975, rnd);
+
+        vec2 local = fract(particleUV * 35.0) - 0.5;
+
+        float d = length(local);
+        float shape = smoothstep(0.25, 0.0, d);
+
+        float intensity = particle * shape * uStrength;
+
+        /* omw.fogColor.xyz is used as the particle color */
+        color.rgb += omw.fogColor.xyz * intensity;
+
+        omw_FragColor = color;
+    }
+}
+
+technique {
+    description = "Updraft wind with particles.";
+    passes = main;
+    version = "1.0";
+    dynamic = true;
+    flags = hidden;
+}

@@ -31,7 +31,7 @@ local interfaces             = require("openmw.interfaces")
 local ringbuffer             = require("scripts.ErnGlider.ringbuffer")
 local chimtricky             = require("scripts.ErnGlider.chimtricky")
 local settings               = require("scripts.ErnGlider.settings")
-local blur                   = require("scripts.ErnGlider.blur")
+local blur                   = require("scripts.ErnGlider.blurshader")
 
 -- initial momentum when starting surf
 local startMomentum          = 0.2

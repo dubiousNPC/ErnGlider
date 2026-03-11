@@ -26,7 +26,10 @@ local util               = require('openmw.util')
 
 local fieldsByCell       = {}
 
-local function onGetUpdraftStrength(data)
+local forward            = util.vector3(0, 1, 0)
+local up                 = util.vector3(0, 0, 1)
+
+local function onDoUpdraft(data)
     if not data then
         error("onGetUpdraftStrength.data is nil")
     end
@@ -62,8 +65,14 @@ local function onGetUpdraftStrength(data)
     -- return val
     local updraftVal = fieldsByCell[data.player.cell.id]:max(data.player.position)
     --print("player updraft value: " .. tostring(updraftVal))
-    if updraftVal > 0 then
+    if updraftVal > 0.1 then
         data.player:sendEvent(MOD_NAME .. "onUpdraft", { value = updraftVal })
+        -- teleport up
+        -- this overrides player movement, so also move them forward so they escape
+        local zBoost = up * updraftVal * data.dt * 1000
+        local facingBoost = data.player.rotation:apply(forward):normalize() * updraftVal * data.dt * 500
+        data.player:teleport(data.player.cell, data.player.position + zBoost + facingBoost)
+        --data.player.position = data.player.position + zBoost
     end
 end
 
@@ -84,6 +93,6 @@ return {
     eventHandlers = {
         [MOD_NAME .. 'onHitByGlider'] = onHitByGlider,
         [MOD_NAME .. 'onDamageItem'] = onDamageItem,
-        [MOD_NAME .. 'onGetUpdraftStrength'] = onGetUpdraftStrength,
+        [MOD_NAME .. 'onDoUpdraft'] = onDoUpdraft,
     }
 }

@@ -15,33 +15,34 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]
-local MOD_NAME   = require("scripts.ErnGlider.ns")
-local core       = require("openmw.core")
-local pself      = require("openmw.self")
-local camera     = require('openmw.camera')
-local util       = require('openmw.util')
-local async      = require("openmw.async")
-local types      = require('openmw.types')
-local input      = require('openmw.input')
-local controls   = require('openmw.interfaces').Controls
-local nearby     = require('openmw.nearby')
-local animation  = require('openmw.animation')
-local aux_util   = require('openmw_aux.util')
-local interfaces = require("openmw.interfaces")
-local settings   = require("scripts.ErnGlider.settings")
+local MOD_NAME          = require("scripts.ErnGlider.ns")
+local core              = require("openmw.core")
+local pself             = require("openmw.self")
+local camera            = require('openmw.camera')
+local util              = require('openmw.util')
+local async             = require("openmw.async")
+local types             = require('openmw.types')
+local input             = require('openmw.input')
+local controls          = require('openmw.interfaces').Controls
+local nearby            = require('openmw.nearby')
+local animation         = require('openmw.animation')
+local aux_util          = require('openmw_aux.util')
+local interfaces        = require("openmw.interfaces")
+local settings          = require("scripts.ErnGlider.settings")
+local updraftShader     = require("scripts.ErnGlider.updraftshader")
 
-
-local glideranim  = require("scripts.ErnGlider.glideranim")
+local glideranim        = require("scripts.ErnGlider.glideranim")
 
 -- how much yaw change contributes to side movement drift
-local driftFactor = 3.0
+local driftFactor       = 3.0
 -- side movement is multiplied by this each frame so it decays back to 0
-local driftDecay  = 0.9
+local driftDecay        = 0.9
 -- prevent gliding when fatigue is at this level.
-local minFatigue  = 1
+local minFatigue        = 1
 
+local updraftShaderInst = updraftShader.NewUpdraftShader()
 
-local persist = {
+local persist           = {
     applied = false,
     appliedDuration = 0,
     sideMovement = 0,
@@ -194,6 +195,13 @@ local function canApply()
     return true
 end
 
+local updraftStrength = 0
+local function onUpdraft(data)
+    --settings.debugPrint("updraft! value: " .. tostring(data.value))
+    updraftStrength = data.value
+end
+
+
 local fatigueDebt = 0
 
 local function removeGlider()
@@ -247,6 +255,8 @@ local function removeGlider()
     end
 
     fatigueDebt = 0
+    updraftStrength = 0
+    updraftShaderInst:setEnabled(false)
 end
 
 local function applyGlider()
@@ -289,7 +299,7 @@ local glideAnimOptions = {
 
 local function playGliderAnim(newAnim)
     if not animation.isPlaying(pself, newAnim) then
-        settings.debugPrint("anim start - " .. newAnim)
+        --settings.debugPrint("anim start - " .. newAnim)
         animation.playBlended(pself, newAnim, glideAnimOptions)
     end
 end
@@ -347,10 +357,6 @@ local function onHit(victimActor)
     end
 end
 
-local function onUpdraft(data)
-    settings.debugPrint("updraft! value: " .. tostring(data.value))
-end
-
 local rayCastDelay = 0
 
 local function onUpdate(dt)
@@ -393,13 +399,24 @@ local function onUpdate(dt)
             end
 
             -- check for updrafts
-            core.sendGlobalEvent(MOD_NAME .. "onGetUpdraftStrength", {
-                player = pself })
+            core.sendGlobalEvent(MOD_NAME .. "onDoUpdraft", {
+                player = pself,
+                dt = dt
+            })
         end
         -- put hands up
         animate()
         -- track duration of glide
         persist.appliedDuration = persist.appliedDuration + dt
+
+        -- shader effects
+        updraftStrength = updraftStrength * 0.5
+        if updraftStrength > 0 then
+            updraftShaderInst:setEnabled(true)
+            updraftShaderInst:update(updraftStrength, dt)
+        else
+            updraftShaderInst:setEnabled(false)
+        end
     end
 end
 
