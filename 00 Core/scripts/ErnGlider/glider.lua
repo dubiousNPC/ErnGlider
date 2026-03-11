@@ -413,7 +413,7 @@ local function onUpdate(dt)
         updraftStrength = updraftStrength * 0.5
         if updraftStrength > 0 then
             updraftShaderInst:setEnabled(true)
-            updraftShaderInst:update(updraftStrength, dt)
+            updraftShaderInst:update(updraftStrength / 5, dt)
         else
             updraftShaderInst:setEnabled(false)
         end

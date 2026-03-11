@@ -31,7 +31,6 @@ fragment main {
 
     omw_In vec2 omw_TexCoord;
 
-    // Simple deterministic hash
     float hash(vec2 p)
     {
         return fract(sin(dot(p + uRand, vec2(127.1,311.7))) * 43758.5453);
@@ -44,9 +43,8 @@ fragment main {
 
         vec4 color = omw_GetLastShader(uv);
 
-        /* ---------- WISPY THREADS ---------- */
-
-        const float threadCount = 35.0;
+        const float threadCount = 11.0;
+        const float fadeSize = 0.03; // size of bottom/top fade in UV units
 
         for (float i = 0.0; i < threadCount; i += 1.0)
         {
@@ -61,23 +59,26 @@ fragment main {
             // Random length
             float length = 0.1 + hash(vec2(i,2.0)) * 0.15;
 
-            // Compute vertical position with wrap-around
+            // Vertical position with wrap-around
             float yThread = mod(uv.y - yOffset - t, 1.0);
 
-            // Only pixels inside thread height
+            // Skip if outside thread height
             if (yThread < 0.0 || yThread > length) continue;
 
-            // Fade out top of thread
-            float fade = smoothstep(length, 0.0, yThread);
+            // Fade both bottom and top
+            float fadeBottom = smoothstep(0.0, fadeSize, yThread);
+            float fadeTop = smoothstep(length, length - fadeSize, yThread);
+            float fade = fadeBottom * fadeTop;
 
             // Sinusoidal horizontal wiggle
             float phase = hash(vec2(i,3.0)) * 6.28318;
-            float wiggle = sin(yThread * 20.0 + phase + t * 2.0) * 0.015;
+            float wiggle = sin(yThread * 20.0 + phase + t * 2.0) * 0.01;
 
+            // Distance from pixel X to thread X
             float dx = abs(uv.x - xThread - wiggle);
 
-            // Soft thread shape
-            float threadWidth = 0.02;
+            // Thin soft thread
+            float threadWidth = 0.008;
             float shape = smoothstep(threadWidth, 0.0, dx) * fade;
 
             float intensity = shape * uStrength;
@@ -90,7 +91,7 @@ fragment main {
 }
 
 technique {
-    description = "Updraft wispy threads with wrapping and fading tops.";
+    description = "Updraft wispy threads with smooth top and bottom fades.";
     passes = main;
     version = "1.0";
     dynamic = true;
