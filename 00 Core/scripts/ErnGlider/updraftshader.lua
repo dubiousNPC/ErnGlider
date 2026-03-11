@@ -34,6 +34,7 @@ function NewUpdraftShader()
         strength = 0,
         shader = postprocessing.load("gliderupdraft"),
         elapsedTime = 0,
+        rand = 0,
     }
     setmetatable(new, UpdraftShaderFunctions)
     return new
@@ -47,11 +48,12 @@ function UpdraftShaderFunctions.setEnabled(self, status)
     end
     self.enabled = status
     if status then
-        print("enabling blur shader")
+        print("enabling updraft shader")
         self.shader:setFloat("uStrength", self.strength)
+        self.shader:setFloat("uRand", math.random())
         self.shader:enable()
     else
-        print("disabling blur shader")
+        print("disabling updraft shader")
         self.shader:disable()
     end
 end

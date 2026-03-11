@@ -1,5 +1,5 @@
 uniform_float uStrength {
-    default = 0.5;
+    default = 0.6;
     min = 0.0;
     step = 0.01;
     display_name = "Wind Strength";
@@ -18,6 +18,11 @@ uniform_float uTime {
     static = false;
 }
 
+uniform_float uRand {
+    default = 0.0;
+    static = false;
+}
+
 shared {
 
 }
@@ -26,49 +31,67 @@ fragment main {
 
     omw_In vec2 omw_TexCoord;
 
+    // Simple deterministic hash
     float hash(vec2 p)
     {
-        return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453);
+        return fract(sin(dot(p + uRand, vec2(127.1,311.7))) * 43758.5453);
     }
 
     void main()
     {
         vec2 uv = omw_TexCoord;
-
         float t = uTime * uSpeed;
 
         vec4 color = omw_GetLastShader(uv);
 
-        /* ---------- PARTICLES ---------- */
+        /* ---------- WISPY THREADS ---------- */
 
-        vec2 particleUV = omw_TexCoord;
+        const float threadCount = 35.0;
 
-        /* upward motion */
-        particleUV.y -= t * 0.2;
+        for (float i = 0.0; i < threadCount; i += 1.0)
+        {
+            // Horizontal position of the thread
+            float rndX = hash(vec2(i,0.0));
+            float xThread = (i + 0.5)/threadCount + (rndX - 0.5) * 0.03;
 
-        vec2 cell = floor(particleUV * 35.0);
-        float rnd = hash(cell);
+            // Random vertical offset for this thread
+            float rndY = hash(vec2(i,1.0));
+            float yOffset = rndY;
 
-        float particle = step(0.975, rnd);
+            // Random length
+            float length = 0.1 + hash(vec2(i,2.0)) * 0.15;
 
-        vec2 local = fract(particleUV * 35.0) - 0.5;
+            // Compute vertical position with wrap-around
+            float yThread = mod(uv.y - yOffset - t, 1.0);
 
-        float d = length(local);
-        float shape = smoothstep(0.25, 0.0, d);
+            // Only pixels inside thread height
+            if (yThread < 0.0 || yThread > length) continue;
 
-        float intensity = particle * shape * uStrength;
+            // Fade out top of thread
+            float fade = smoothstep(length, 0.0, yThread);
 
-        /* omw.fogColor.xyz is used as the particle color */
-        color.rgb += omw.fogColor.xyz * intensity;
+            // Sinusoidal horizontal wiggle
+            float phase = hash(vec2(i,3.0)) * 6.28318;
+            float wiggle = sin(yThread * 20.0 + phase + t * 2.0) * 0.015;
+
+            float dx = abs(uv.x - xThread - wiggle);
+
+            // Soft thread shape
+            float threadWidth = 0.02;
+            float shape = smoothstep(threadWidth, 0.0, dx) * fade;
+
+            float intensity = shape * uStrength;
+
+            color.rgb += omw.fogColor.xyz * intensity;
+        }
 
         omw_FragColor = color;
     }
 }
 
 technique {
-    description = "Updraft wind with particles.";
+    description = "Updraft wispy threads with wrapping and fading tops.";
     passes = main;
     version = "1.0";
     dynamic = true;
-    flags = hidden;
 }
