@@ -410,10 +410,10 @@ local function onUpdate(dt)
         persist.appliedDuration = persist.appliedDuration + dt
 
         -- shader effects
-        updraftStrength = updraftStrength * 0.5
+        updraftStrength = updraftStrength - dt
         if updraftStrength > 0 then
             updraftShaderInst:setEnabled(true)
-            updraftShaderInst:update(updraftStrength / 5, dt)
+            updraftShaderInst:update(updraftStrength / 4, dt)
         else
             updraftShaderInst:setEnabled(false)
         end

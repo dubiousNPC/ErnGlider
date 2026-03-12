@@ -15,19 +15,22 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]
-local MOD_NAME           = require("scripts.ErnGlider.ns")
-local types              = require("openmw.types")
-local world              = require("openmw.world")
-local interfaces         = require("openmw.interfaces")
-local updraftdata        = require("scripts.ErnGlider.updraft.load")
-local kerneldensityfield = require("scripts.ErnGlider.kerneldensityfield")
-local aux_util           = require('openmw_aux.util')
-local util               = require('openmw.util')
+local MOD_NAME                        = require("scripts.ErnGlider.ns")
+local types                           = require("openmw.types")
+local world                           = require("openmw.world")
+local interfaces                      = require("openmw.interfaces")
+local updraftdata                     = require("scripts.ErnGlider.updraft.load")
+local kerneldensityfield              = require("scripts.ErnGlider.kerneldensityfield")
+local aux_util                        = require('openmw_aux.util')
+local util                            = require('openmw.util')
 
-local fieldsByCell       = {}
+local fieldsByCell                    = {}
 
-local forward            = util.vector3(0, 1, 0)
-local up                 = util.vector3(0, 0, 1)
+local updraftVerticalStrengthFactor   = 5000
+local updraftHorizontalStrengthFactor = 500
+
+local forward                         = util.vector3(0, 1, 0)
+local up                              = util.vector3(0, 0, 1)
 
 local function onDoUpdraft(data)
     if not data then
@@ -63,14 +66,14 @@ local function onDoUpdraft(data)
     end
 
     -- return val
-    local updraftVal = fieldsByCell[data.player.cell.id]:max(data.player.position)
+    local updraftVal = util.clamp(fieldsByCell[data.player.cell.id]:max(data.player.position), 0, 1)
     --print("player updraft value: " .. tostring(updraftVal))
     if updraftVal > 0.1 then
         data.player:sendEvent(MOD_NAME .. "onUpdraft", { value = updraftVal })
         -- teleport up
         -- this overrides player movement, so also move them forward so they escape
-        local zBoost = up * updraftVal * data.dt * 1000
-        local facingBoost = data.player.rotation:apply(forward):normalize() * updraftVal * data.dt * 500
+        local zBoost = up * updraftVal * data.dt * updraftVerticalStrengthFactor
+        local facingBoost = data.player.rotation:apply(forward):normalize() * data.dt * updraftHorizontalStrengthFactor
         data.player:teleport(data.player.cell, data.player.position + zBoost + facingBoost)
         --data.player.position = data.player.position + zBoost
     end
