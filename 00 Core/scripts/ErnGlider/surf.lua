@@ -121,7 +121,7 @@ local sounds         = {
     land_hv = "Sound\\Fx\\FOOT\\land_hv.wav"
 }
 
-local shieldBone     = "shield01" -- or maybe Bip01 Feet Midpoint -- or Shield01
+local shieldBone     = "Shield01" -- or maybe Bip01 Feet Midpoint -- or Shield01
 local surfAnimations = {
     forward = "shieldgo",         --"Shieldgo",
     left = "sneakleft",
@@ -168,13 +168,16 @@ local function getSurfWeightSpell()
 end
 
 local function applyVFX()
-    if animation.hasBone(pself, shieldBone) then
+    --[[if animation.hasBone(pself, shieldBone) then
         local shieldModel = persist.activeShieldRecord.model
         animation.addVfx(pself, shieldModel,
             { loop = true, boneName = shieldBone, vfxId = "surf", useAmbientLight = false })
     else
         settings.debugPrint("can't find bone: " .. tostring(shieldBone))
-    end
+    end]]
+    local shieldModel = persist.activeShieldRecord.model
+    animation.addVfx(pself, shieldModel,
+        { loop = true, boneName = shieldBone, vfxId = "surf", useAmbientLight = false })
 end
 
 local function applySurfSpell()
@@ -466,6 +469,7 @@ local function animate()
         --animation.clearAnimationQueue(pself, false)
         --animation.playQueued(pself, surfAnimations.forward)
         animation.playBlended(pself, surfAnimations.forward, fullAnimationOptions)
+    else
         applyVFX()
     end
 end
