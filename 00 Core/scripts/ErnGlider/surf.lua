@@ -121,9 +121,9 @@ local sounds         = {
     land_hv = "Sound\\Fx\\FOOT\\land_hv.wav"
 }
 
-local shieldBone     = "Shield01" -- or maybe Bip01 Feet Midpoint -- or Shield01
+local shieldBone     = "shield01" -- or maybe Bip01 Feet Midpoint -- or Shield01
 local surfAnimations = {
-    forward = "Shieldgo",         --"Shieldgo",
+    forward = "shieldgo",         --"Shieldgo",
     left = "sneakleft",
     right = "sneakright"
 }
@@ -552,10 +552,8 @@ local function onUpdate(dt)
                     loop = false,
                 })
             end
-            if animation.hasBone(pself, shieldBone) then
-                animation.addVfx(pself, "meshes/ernglider/poof.nif",
-                    { loop = false, boneName = shieldBone, vfxId = "poof", useAmbientLight = false })
-            end
+            animation.addVfx(pself, "meshes/ernglider/poof.nif",
+                { loop = false, boneName = shieldBone, vfxId = "right foot", useAmbientLight = false })
         elseif not persist.landed then
             -- in air
             persist.maxHeightOnCurrentJump = math.max(persist.maxHeightOnCurrentJump, persist.currentFootPos.z)
