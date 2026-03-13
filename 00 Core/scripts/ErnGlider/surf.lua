@@ -121,7 +121,7 @@ local sounds         = {
     land_hv = "Sound\\Fx\\FOOT\\land_hv.wav"
 }
 
-local shieldBone     = "Shield01" -- or maybe Bip01 Feet Midpoint
+local shieldBone     = "Shield01" -- or maybe Bip01 Feet Midpoint -- or Shield01
 local surfAnimations = {
     forward = "Shieldgo",         --"Shieldgo",
     left = "sneakleft",
@@ -168,9 +168,13 @@ local function getSurfWeightSpell()
 end
 
 local function applyVFX()
-    local shieldModel = persist.activeShieldRecord.model
-    animation.addVfx(pself, shieldModel,
-        { loop = true, boneName = shieldBone, vfxId = "surf", useAmbientLight = false })
+    if animation.hasBone(pself, shieldBone) then
+        local shieldModel = persist.activeShieldRecord.model
+        animation.addVfx(pself, shieldModel,
+            { loop = true, boneName = shieldBone, vfxId = "surf", useAmbientLight = false })
+    else
+        settings.debugPrint("can't find bone: " .. tostring(shieldBone))
+    end
 end
 
 local function applySurfSpell()
@@ -437,13 +441,14 @@ local function animate()
         return
     end
 
-    if surfAnimations.left and (pself.controls.sideMovement <= -1 * settings.main.deadzone) and not animation.isPlaying(pself, surfAnimations.left) then
+    local armAnim = animation.getActiveGroup(pself, animation.BONE_GROUP.LeftArm)
+    if surfAnimations.left and (pself.controls.sideMovement <= -1 * settings.main.deadzone) and surfAnimations.left ~= armAnim then
         animation.cancel(pself, surfAnimations.right)
         if not animation.isPlaying(pself, surfAnimations.left) then
             settings.debugPrint("anim start left - " .. surfAnimations.left)
             animation.playBlended(pself, surfAnimations.left, armsAnimationOptions)
         end
-    elseif surfAnimations.right and (pself.controls.sideMovement >= settings.main.deadzone) and not animation.isPlaying(pself, surfAnimations.right) then
+    elseif surfAnimations.right and (pself.controls.sideMovement >= settings.main.deadzone) and surfAnimations.right ~= armAnim then
         animation.cancel(pself, surfAnimations.left)
         if not animation.isPlaying(pself, surfAnimations.right) then
             settings.debugPrint("anim start right - " .. surfAnimations.right)
@@ -455,7 +460,8 @@ local function animate()
     end
 
     -- always play forward
-    if not animation.isPlaying(pself, surfAnimations.forward) then
+    local legAnim = animation.getActiveGroup(pself, animation.BONE_GROUP.LowerBody)
+    if legAnim ~= surfAnimations.forward then
         settings.debugPrint("anim start forward - " .. surfAnimations.forward)
         --animation.clearAnimationQueue(pself, false)
         --animation.playQueued(pself, surfAnimations.forward)
@@ -546,8 +552,10 @@ local function onUpdate(dt)
                     loop = false,
                 })
             end
-            animation.addVfx(pself, "meshes/ernglider/poof.nif",
-                { loop = false, boneName = shieldBone, vfxId = "poof", useAmbientLight = false })
+            if animation.hasBone(pself, shieldBone) then
+                animation.addVfx(pself, "meshes/ernglider/poof.nif",
+                    { loop = false, boneName = shieldBone, vfxId = "poof", useAmbientLight = false })
+            end
         elseif not persist.landed then
             -- in air
             persist.maxHeightOnCurrentJump = math.max(persist.maxHeightOnCurrentJump, persist.currentFootPos.z)
