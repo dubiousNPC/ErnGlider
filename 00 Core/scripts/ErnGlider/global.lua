@@ -32,6 +32,8 @@ local updraftHorizontalStrengthFactor = 500
 local forward                         = util.vector3(0, 1, 0)
 local up                              = util.vector3(0, 0, 1)
 
+local updraftingPlayers               = {}
+
 local function onDoUpdraft(data)
     if not data then
         error("onGetUpdraftStrength.data is nil")
@@ -69,13 +71,25 @@ local function onDoUpdraft(data)
     local updraftVal = util.clamp(fieldsByCell[data.player.cell.id]:max(data.player.position), 0, 1)
     --print("player updraft value: " .. tostring(updraftVal))
     if updraftVal > 0.1 then
-        data.player:sendEvent(MOD_NAME .. "onUpdraft", { value = updraftVal })
+        local started = false
+        if not updraftingPlayers[data.player.id] then
+            updraftingPlayers[data.player.id] = true
+            started = true
+        end
+        data.player:sendEvent(MOD_NAME .. "onUpdraft", { value = updraftVal, started = started })
         -- teleport up
         -- this overrides player movement, so also move them forward so they escape
         local zBoost = up * updraftVal * data.dt * updraftVerticalStrengthFactor
         local facingBoost = data.player.rotation:apply(forward):normalize() * data.dt * updraftHorizontalStrengthFactor
         data.player:teleport(data.player.cell, data.player.position + zBoost + facingBoost)
         --data.player.position = data.player.position + zBoost
+    else
+        local ended = false
+        if updraftingPlayers[data.player.id] then
+            updraftingPlayers[data.player.id] = false
+            ended = true
+        end
+        data.player:sendEvent(MOD_NAME .. "onUpdraft", { value = 0, ended = ended })
     end
 end
 

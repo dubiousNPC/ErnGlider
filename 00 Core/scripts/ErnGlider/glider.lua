@@ -98,7 +98,8 @@ end
 local sounds = {
     wind = getSoundFilePath("wind.mp3"),
     breath_in = getSoundFilePath("breath_in.mp3"),
-    hit_wall = "Sound\\Fx\\body hit.wav"
+    hit_wall = "Sound\\Fx\\body hit.wav",
+    updraft = getSoundFilePath("up draft with more wind.wav"),
 }
 
 local function applyGlideSpell(currentGlider)
@@ -197,7 +198,11 @@ end
 
 local updraftStrength = 0
 local function onUpdraft(data)
-    --settings.debugPrint("updraft! value: " .. tostring(data.value))
+    if data.started then
+        core.sound.playSoundFile3d(sounds.updraft, pself, {
+            volume = settings.main.volume * .5,
+        })
+    end
     updraftStrength = data.value
 end
 

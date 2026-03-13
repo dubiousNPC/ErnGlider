@@ -53,6 +53,7 @@ Masterwork glider: `setJournalIndex eg_glider 31`
 - Breath In by mooncubedesign -- https://freesound.org/s/319247/ -- License: Creative Commons 0
 - Gravel Road by seth-m -- https://freesound.org/people/seth-m/sounds/341069/ -- License: Creative Commons 0
 - Landing On The Ground [2] by SoundDesignForYou -- https://freesound.org/people/SoundDesignForYou/sounds/646660/ -- License: Creative Commons 0
+- up draft with more wind.wav by SahJop
 
 ### Meshes & Textures
 

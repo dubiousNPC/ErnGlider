@@ -121,17 +121,17 @@ local sounds         = {
     land_hv = "Sound\\Fx\\FOOT\\land_hv.wav"
 }
 
-local shieldBone     = "Right Foot"
+local shieldBone     = "Shield01" -- or maybe Bip01 Feet Midpoint
 local surfAnimations = {
-    forward = "runforward", --"Shieldgo",
+    forward = "Shieldgo",         --"Shieldgo",
     left = "sneakleft",
     right = "sneakright"
 }
 
 local function cancelSurfAnimations()
     animation.cancel(pself, surfAnimations.forward)
-    animation.cancel(pself, surfAnimations.right)
-    animation.cancel(pself, surfAnimations.left)
+    if surfAnimations.right then animation.cancel(pself, surfAnimations.right) end
+    if surfAnimations.left then animation.cancel(pself, surfAnimations.left) end
 end
 
 local function getShield()
@@ -167,8 +167,13 @@ local function getSurfWeightSpell()
     end
 end
 
-local function applySurfSpell()
+local function applyVFX()
     local shieldModel = persist.activeShieldRecord.model
+    animation.addVfx(pself, shieldModel,
+        { loop = true, boneName = shieldBone, vfxId = "surf", useAmbientLight = false })
+end
+
+local function applySurfSpell()
     pself.type.activeSpells(pself):add({
         id = surfSpell,
         effects = { 0, 1, 2 },
@@ -177,8 +182,6 @@ local function applySurfSpell()
         ignoreReflect = true
     })
     pself.type.activeSpells(pself):add(getSurfWeightSpell())
-    animation.addVfx(pself, shieldModel,
-        { loop = true, boneName = shieldBone, vfxId = "surf", useAmbientLight = false })
 end
 
 local forward = util.vector3(0.0, 1.0, 0.0)
@@ -413,44 +416,51 @@ end
 
 local armsAnimationOptions = {
     priority = animation.PRIORITY.Storm,
-    --blendMask = util.bitOr(animation.BLEND_MASK.LeftArm, animation.BLEND_MASK.RightArm),
-    blendMask = animation.BLEND_MASK.UpperBody,
+    blendMask = util.bitOr(animation.BLEND_MASK.LeftArm, animation.BLEND_MASK.RightArm),
+    --blendMask = animation.BLEND_MASK.UpperBody,
     loops = -1,
     speed = 1,
 }
 local fullAnimationOptions = {
-    priority = animation.PRIORITY.Storm,
+    priority = animation.PRIORITY.Hit,
     --blendMask = util.bitOr(animation.BLEND_MASK.LeftArm, animation.BLEND_MASK.RightArm),
-    --blendMask = animation.BLEND_MASK.UpperBody,
+    --blendMask = animation.BLEND_MASK.LowerBody,
     loops = -1,
     speed = 1,
 }
 local function animate()
     if not types.Actor.isOnGround(pself) then
         -- cancel these anims, which should let Jump animation take precedence
-        cancelSurfAnimations()
+        --cancelSurfAnimations()
+        if surfAnimations.left then animation.cancel(pself, surfAnimations.left) end
+        if surfAnimations.right then animation.cancel(pself, surfAnimations.right) end
         return
     end
 
-    if (pself.controls.sideMovement <= -1 * settings.main.deadzone) and not animation.isPlaying(pself, surfAnimations.left) then
+    if surfAnimations.left and (pself.controls.sideMovement <= -1 * settings.main.deadzone) and not animation.isPlaying(pself, surfAnimations.left) then
         animation.cancel(pself, surfAnimations.right)
         if not animation.isPlaying(pself, surfAnimations.left) then
             settings.debugPrint("anim start left - " .. surfAnimations.left)
             animation.playBlended(pself, surfAnimations.left, armsAnimationOptions)
         end
-    elseif (pself.controls.sideMovement >= settings.main.deadzone) and not animation.isPlaying(pself, surfAnimations.right) then
+    elseif surfAnimations.right and (pself.controls.sideMovement >= settings.main.deadzone) and not animation.isPlaying(pself, surfAnimations.right) then
         animation.cancel(pself, surfAnimations.left)
         if not animation.isPlaying(pself, surfAnimations.right) then
             settings.debugPrint("anim start right - " .. surfAnimations.right)
             animation.playBlended(pself, surfAnimations.right, armsAnimationOptions)
         end
     elseif (math.abs(pself.controls.sideMovement) < settings.main.deadzone) then
-        animation.cancel(pself, surfAnimations.left)
-        animation.cancel(pself, surfAnimations.right)
-        if not animation.isPlaying(pself, surfAnimations.forward) then
-            settings.debugPrint("anim start forward - " .. surfAnimations.forward)
-            animation.playBlended(pself, surfAnimations.forward, fullAnimationOptions)
-        end
+        if surfAnimations.left then animation.cancel(pself, surfAnimations.left) end
+        if surfAnimations.right then animation.cancel(pself, surfAnimations.right) end
+    end
+
+    -- always play forward
+    if not animation.isPlaying(pself, surfAnimations.forward) then
+        settings.debugPrint("anim start forward - " .. surfAnimations.forward)
+        --animation.clearAnimationQueue(pself, false)
+        --animation.playQueued(pself, surfAnimations.forward)
+        animation.playBlended(pself, surfAnimations.forward, fullAnimationOptions)
+        applyVFX()
     end
 end
 
