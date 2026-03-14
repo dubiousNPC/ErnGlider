@@ -38,13 +38,17 @@ local startMomentum          = 0.2
 -- downward slope bonus factor
 local slopeDownMomentumRatio = 0.2
 -- upward slope penalty factor
-local slopeUpMomentumRatio   = 0.6
+local slopeUpMomentumRatio   = 0.8
 -- friction to decay momentum by
-local friction               = 0.01
+local friction               = 0.015
+-- radian threshold to start drifting
+local driftTurnThreshold     = 0.005
 -- how much yaw change contributes to side movement drift
-local driftFactor            = 3.0
--- side movement is multiplied by this each frame so it decays back to 0
-local driftDecay             = 0.9
+local driftFactor            = 1.1
+-- decay drift momentum by this amount per second
+local driftDecay             = 0.7
+-- clamp drift to this magnitude
+local maxDrift               = 0.8
 -- if momentum drops below this, we quit surfing
 local kickoutMinimumMomentum = 0.15
 -- prevent surfing when fatigue is at this level.
@@ -61,6 +65,7 @@ local persist                = {
     applied = false,
     appliedDuration = 0,
     momentum = startMomentum,
+    driftMomentum = 0,
     activeShield = nil,
     activeShieldRecord = nil,
     landed = false,
@@ -121,9 +126,9 @@ local sounds         = {
     land_hv = "Sound\\Fx\\FOOT\\land_hv.wav"
 }
 
-local shieldBone     = "Bip01 Shield01" -- or maybe Bip01 Feet Midpoint -- or Shield01
+local shieldBone     = "bip01 shieldsurf" --Bip01 Shieldsurf
 local surfAnimations = {
-    forward = "shieldgo",               --"Shieldgo",
+    forward = "shieldgo",                 --"Shieldgo",
     left = "sneakleft",
     right = "sneakright",
     jump = "sneakforward"
@@ -218,6 +223,9 @@ local function onLoad(data)
     end
     if data.sideMovement == nil then
         data.sideMovement = 0
+    end
+    if persist.driftMomentum == nil then
+        persist.driftMomentum = 0
     end
 end
 local function onSave()
@@ -337,6 +345,7 @@ local function applySurf()
     persist.activeShield = nil
     persist.applied = true
     persist.momentum = startMomentum
+    persist.driftMomentum = 0
     persist.landed = false
 
     persist.lastFootPos = getFootPos()
@@ -705,10 +714,28 @@ local function onFrame(dt)
         -- Don't give direct control over strafing.
         -- If the camera swings too much, automatically mix in strafing.
         local startingYaw = pself.controls.yawChange
-        if math.abs(startingYaw) < 0.05 then
+        if math.abs(startingYaw) < driftTurnThreshold then
             startingYaw = 0
+        elseif startingYaw < 0 then
+            startingYaw = startingYaw + driftTurnThreshold
+        elseif startingYaw > 0 then
+            startingYaw = startingYaw - driftTurnThreshold
         end
-        persist.sideMovement = util.clamp((persist.sideMovement + startingYaw * driftFactor) * driftDecay, -1, 1)
+        persist.driftMomentum = persist.driftMomentum + startingYaw * driftFactor
+        if persist.driftMomentum > 0 then
+            persist.driftMomentum = persist.driftMomentum - driftDecay * dt
+            if persist.driftMomentum < 0 then
+                persist.driftMomentum = 0
+            end
+        else
+            persist.driftMomentum = persist.driftMomentum + driftDecay * dt
+            if persist.driftMomentum > 0 then
+                persist.driftMomentum = 0
+            end
+        end
+        persist.driftMomentum = util.clamp(persist.driftMomentum, -maxDrift, maxDrift)
+
+        persist.sideMovement = persist.driftMomentum
         --settings.debugPrint("sidemovement: " .. tostring(persist.sideMovement))
         pself.controls.sideMovement = persist.sideMovement
         pself.controls.movement = util.clamp(persist.momentum - math.abs(persist.sideMovement), 0, 1)
