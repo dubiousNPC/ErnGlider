@@ -115,6 +115,23 @@ local function getSoundFilePath(file)
     return "sound\\" .. MOD_NAME .. "\\" .. file
 end
 
+local footSounds = {
+    "Sound\\Fx\\FOOT\\walkl_br.wav",
+    "Sound\\Fx\\FOOT\\walkl_hv.wav",
+    "Sound\\Fx\\FOOT\\walkl_lt.wav",
+    "Sound\\Fx\\FOOT\\walkl_md.wav",
+    "Sound\\Fx\\FOOT\\walkr_br.wav",
+    "Sound\\Fx\\FOOT\\walkr_hv.wav",
+    "Sound\\Fx\\FOOT\\walkr_lt.wav",
+    "Sound\\Fx\\FOOT\\walkr_md.wav"
+}
+-- TODO: this doesn't actually stop running sounds.
+local function cancelFootSounds()
+    for _, file in ipairs(footSounds) do
+        core.sound.stopSoundFile3d(file, pself)
+    end
+end
+
 local sounds         = {
     wind = getSoundFilePath("wind.mp3"),
     breath_in = getSoundFilePath("breath_in.mp3"),
@@ -235,6 +252,10 @@ end
 local function canApply()
     if types.Actor.getStance(pself) ~= types.Actor.STANCE.Nothing then
         settings.debugPrint("canApply surf: spell or weapon is readied")
+        return false
+    end
+    if types.Actor.isSwimming(pself) then
+        settings.debugPrint("canApply surf: swimming")
         return false
     end
     local levitateEffect = types.Actor.activeEffects(pself):getEffect(core.magic.EFFECT_TYPE.Levitate)
@@ -694,6 +715,7 @@ local function onFrame(dt)
     if persist.applied then
         -- only adjust momenum while on ground
         if persist.landed then
+            -- cancelFootSounds() -- doesn't work
             persist.momentum = util.clamp(persist.momentum - (friction + slopeMomentumFactor(persist.slope)) * dt,
                 0,
                 1)

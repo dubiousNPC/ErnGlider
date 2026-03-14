@@ -161,6 +161,10 @@ local function canApply()
         settings.debugPrint("canApply gilder: on ground")
         return false
     end
+    if types.Actor.isSwimming(pself) then
+        settings.debugPrint("canApply glider: swimming")
+        return false
+    end
     if types.Actor.getStance(pself) ~= types.Actor.STANCE.Nothing then
         settings.debugPrint("canApply gilder: spell or weapon is readied")
         return false
