@@ -39,8 +39,8 @@ local startMomentum          = 0.2
 local slopeDownMomentumRatio = 0.2
 -- upward slope penalty factor
 local slopeUpMomentumRatio   = 0.8
--- friction to decay momentum by
-local friction               = 0.015
+-- friction per second to decay momentum by
+local friction               = 0.015 * 60
 -- radian threshold per second to start drifting
 local driftTurnThreshold     = 0.005 * 60
 -- how much yaw change contributes to side movement drift
@@ -126,7 +126,7 @@ local sounds         = {
     land_hv = "Sound\\Fx\\FOOT\\land_hv.wav"
 }
 
-local shieldBone     = "bip01 shieldsurf" --Bip01 Shieldsurf
+local shieldBone     = "Bip01 Shieldsurf" --Bip01 Shieldsurf
 local surfAnimations = {
     forward = "shieldgo",                 --"Shieldgo",
     left = "sneakleft",
@@ -496,9 +496,8 @@ local function animate()
         --animation.clearAnimationQueue(pself, false)
         --animation.playQueued(pself, surfAnimations.forward)
         animation.playBlended(pself, surfAnimations.forward, fullAnimationOptions)
-    else
-        applyVFX()
     end
+    applyVFX()
 end
 
 local function onJump()
@@ -702,7 +701,7 @@ local function onFrame(dt)
         -- only adjust momenum while on ground
         if persist.landed then
             -- cancelFootSounds() -- doesn't work
-            persist.momentum = util.clamp(persist.momentum - (friction + slopeMomentumFactor(persist.slope)) * dt,
+            persist.momentum = util.clamp(persist.momentum - (friction * dt + slopeMomentumFactor(persist.slope)) * dt,
                 0,
                 1)
             if persist.landed and (persist.momentum <= kickoutMinimumMomentum) then
