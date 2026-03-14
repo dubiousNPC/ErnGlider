@@ -115,23 +115,6 @@ local function getSoundFilePath(file)
     return "sound\\" .. MOD_NAME .. "\\" .. file
 end
 
-local footSounds = {
-    "Sound\\Fx\\FOOT\\walkl_br.wav",
-    "Sound\\Fx\\FOOT\\walkl_hv.wav",
-    "Sound\\Fx\\FOOT\\walkl_lt.wav",
-    "Sound\\Fx\\FOOT\\walkl_md.wav",
-    "Sound\\Fx\\FOOT\\walkr_br.wav",
-    "Sound\\Fx\\FOOT\\walkr_hv.wav",
-    "Sound\\Fx\\FOOT\\walkr_lt.wav",
-    "Sound\\Fx\\FOOT\\walkr_md.wav"
-}
--- TODO: this doesn't actually stop running sounds.
-local function cancelFootSounds()
-    for _, file in ipairs(footSounds) do
-        core.sound.stopSoundFile3d(file, pself)
-    end
-end
-
 local sounds         = {
     wind = getSoundFilePath("wind.mp3"),
     breath_in = getSoundFilePath("breath_in.mp3"),
@@ -470,9 +453,12 @@ local fullAnimationOptions = {
     speed = 1,
 }
 local function animate()
+    -- cancel run anims so the footstep sounds stop
+    animation.cancel(pself, "runforward")
+    animation.cancel(pself, "runleft")
+    animation.cancel(pself, "runright")
+
     if not types.Actor.isOnGround(pself) then
-        -- cancel these anims, which should let Jump animation take precedence
-        --cancelSurfAnimations()
         if surfAnimations.left then animation.cancel(pself, surfAnimations.left) end
         if surfAnimations.right then animation.cancel(pself, surfAnimations.right) end
         if surfAnimations.jump and not animation.isPlaying(pself, surfAnimations.jump) then
