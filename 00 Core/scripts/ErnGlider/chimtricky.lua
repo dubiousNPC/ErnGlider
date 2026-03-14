@@ -39,6 +39,7 @@ local uiInterface        = require("openmw.interfaces").UI
 ---@field speed number
 ---@field conditionRatio number
 ---@field fatigueRatio number
+---@field momentumRatio number
 ---@field points number
 
 ---@type DisplayData?
@@ -54,7 +55,7 @@ local function configColor(setting)
     return color
 end
 
-local pointsText = ui.create {
+local pointsText          = ui.create {
     type = ui.TYPE.Text,
     name = "pointsText",
     props = {
@@ -70,12 +71,14 @@ local pointsText = ui.create {
     }
 }
 
-local kphText    = ui.create {
+local kphNormalColor      = configColor("normal")
+local kphMaxMomentumColor = configColor("positive")
+local kphText             = ui.create {
     type = ui.TYPE.Text,
     name = "speedText",
     props = {
         text = "0 kph",
-        textColor = configColor("normal"),
+        textColor = kphNormalColor,
         textShadow = true,
         textShadowColor = util.color.rgba(0, 0, 0, 0.9),
         textAlignV = ui.ALIGNMENT.Start,
@@ -100,6 +103,8 @@ local fatigueBar    = bar.NewBar(1, configColor("fatigue"),
     lerpColor(configColor("fatigue"), util.color.rgba(0.9, 0.9, 0.9, 1), 0.7))
 local conditionBar  = bar.NewBar(1, configColor("weapon_fill"),
     lerpColor(configColor("weapon_fill"), util.color.rgba(0.9, 0.9, 0.9, 1), 0.7))
+local momentumBar   = bar.NewBar(1, configColor("journal_link"),
+    lerpColor(configColor("journal_topic"), util.color.rgba(0.9, 0.9, 0.9, 1), 0.7))
 
 local pointsElement = ui.create {
     name = "root",
@@ -153,7 +158,8 @@ local statusElement = ui.create {
                         fatigueBar.elem,
                         { props = { size = util.vector2(4, 0) } },
                         conditionBar.elem,
-                        { props = { size = util.vector2(4, 0) } }
+                        { props = { size = util.vector2(4, 0) } },
+                        momentumBar.elem,
                     }
                 },
             }
@@ -187,6 +193,23 @@ local function display(data)
             pointsElement.layout.props.visible = true
             fatigueBar:reset(data.fatigueRatio or 1)
             conditionBar:reset(data.conditionRatio or 1)
+            momentumBar:reset(data.momentumRatio or 0)
+        end
+    end
+
+    if data.momentumRatio then
+        if data.momentumRatio >= 1 then
+            kphText.layout.props.textColor = kphMaxMomentumColor
+        else
+            kphText.layout.props.textColor = kphNormalColor
+        end
+        -- debug momentum meter
+        if settings.main.debugMode then
+            momentumBar.elem.layout.props.visible = true
+            momentumBar:onUpdate(data.dt, data.momentumRatio)
+        else
+            momentumBar.elem.layout.props.visible = false
+            momentumBar.elem:update()
         end
     end
 

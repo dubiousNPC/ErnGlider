@@ -673,6 +673,7 @@ local function onUpdate(dt)
             speed = avgSpeed,
             conditionRatio = types.Item.itemData(getShield()).condition / persist.activeShieldRecord.health,
             fatigueRatio = fatigueStat.current / fatigueStat.base,
+            momentumRatio = util.remap(persist.momentum, kickoutMinimumMomentum, 1, 0, 1),
             points = calcPoints(false),
         })
     else
@@ -700,7 +701,6 @@ local function onFrame(dt)
     if persist.applied then
         -- only adjust momenum while on ground
         if persist.landed then
-            -- cancelFootSounds() -- doesn't work
             persist.momentum = util.clamp(persist.momentum - (friction * dt + slopeMomentumFactor(persist.slope)) * dt,
                 0,
                 1)
@@ -709,12 +709,14 @@ local function onFrame(dt)
                 removeSurf()
                 return
             end
-            if persist.momentum > 0.3 then
-                persist.points.slidePoints = persist.points.slidePoints + pointsPerSlideSecond * dt * persist.momentum
+            if persist.momentum > 1.5 * kickoutMinimumMomentum then
+                persist.points.slidePoints = persist.points.slidePoints +
+                    pointsPerSlideSecond * dt * persist.momentum * persist.momentum
             end
         else
-            if persist.momentum > 0.2 then
-                persist.points.airPoints = persist.points.airPoints + pointsPerAirTimeSecond * dt * persist.momentum
+            if persist.momentum > 1.2 * kickoutMinimumMomentum then
+                persist.points.airPoints = persist.points.airPoints +
+                    pointsPerAirTimeSecond * dt * persist.momentum * persist.momentum
             end
         end
 
