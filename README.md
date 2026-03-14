@@ -59,6 +59,8 @@ While in an unreadied stance (your weapon is sheathed and you don't have your sp
 - Gravel Road by seth-m -- https://freesound.org/people/seth-m/sounds/341069/ -- License: Creative Commons 0
 - Landing On The Ground [2] by SoundDesignForYou -- https://freesound.org/people/SoundDesignForYou/sounds/646660/ -- License: Creative Commons 0
 - up draft with more wind.wav by SahJop, used with explicit permission.
+- Dwemer Glider/equip glider.wav by SahJop, used with explicit permission.
+- Racer Glider/equip glider.wav by SahJop, used with explicit permission.
 
 ### Meshes & Textures
 

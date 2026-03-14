@@ -97,7 +97,7 @@ end
 
 local sounds = {
     wind = getSoundFilePath("wind.mp3"),
-    breath_in = getSoundFilePath("breath_in.mp3"),
+    equip = getSoundFilePath("equip glider.wav"),
     hit_wall = "Sound\\Fx\\body hit.wav",
     updraft = getSoundFilePath("up draft with more wind.wav"),
 }
@@ -290,7 +290,7 @@ local function applyGlider()
         volume = settings.main.volume * 0.3,
         loop = true,
     })
-    core.sound.playSoundFile3d(sounds.breath_in, pself, {
+    core.sound.playSoundFile3d(sounds.equip, pself, {
         volume = settings.main.volume,
     })
     -- apply spell
