@@ -2,6 +2,8 @@
 
 OpenMW mod that adds a glider when you double-jump outside.
 
+## Installing
+
 Add `00 Core` and one of `01 DwemerGlider` or `01 RacerGlider` to your data paths.
 
 Add both `ErnGlider.omwaddon` and `ErnGlider.omwscripts`!
@@ -14,15 +16,14 @@ In your settings, enable these:
 And don't enable this:
 - [player-movement-ignores-animation](https://openmw.readthedocs.io/en/stable/reference/modding/settings/game.html#player-movement-ignores-animation)
 
+Consider turning this off:
+- [shield sheathing](https://openmw.readthedocs.io/en/stable/reference/modding/settings/game.html#shield-sheathing)
+
 ## Using Your Glider
 
 Gliders only work while outside. While in an unreadied stance (your weapon is sheathed and you don't have your spellcasting hands out), do a double jump while not holding forward or backward. This will activate your glider, which drains fatigue. Tap your jump button again to put the glider away.
 
-## Shield Surfing
-
-Surfing only works while outside. While in an unreadied stance (your weapon is sheathed and you don't have your spellcasting hands out), do a double jump while holding backward. Shield surfing damages your shield, but you move faster while heading down-slope. Tap your jump button again to put your shield away.
-
-## Walkthrough
+### Glider Quest Walkthrough
 
 1. Talk to a friendly [Acrobat](https://en.uesp.net/wiki/Category:Morrowind-Acrobat) to get a basic glider.
 2. Talk to a friendly [Savant](https://en.uesp.net/wiki/Category:Morrowind-Savant) when you have at least 40 Acrobatics to upgrade your glider.
@@ -44,6 +45,10 @@ Masterwork glider: `setJournalIndex eg_glider 31`
 
 </details>
 
+## Shield Surfing
+
+While in an unreadied stance (your weapon is sheathed and you don't have your spellcasting hands out), do a double jump while holding backward. Shield surfing damages your shield, but you move faster while heading down-slope. Tap your jump button again to put your shield away.
+
 
 ## Credits
 
@@ -53,18 +58,20 @@ Masterwork glider: `setJournalIndex eg_glider 31`
 - Breath In by mooncubedesign -- https://freesound.org/s/319247/ -- License: Creative Commons 0
 - Gravel Road by seth-m -- https://freesound.org/people/seth-m/sounds/341069/ -- License: Creative Commons 0
 - Landing On The Ground [2] by SoundDesignForYou -- https://freesound.org/people/SoundDesignForYou/sounds/646660/ -- License: Creative Commons 0
-- up draft with more wind.wav by SahJop
+- up draft with more wind.wav by SahJop, used with explicit permission.
 
 ### Meshes & Textures
 
-- Gliders by Semaro, used with explicit permission.
+- Dwemer Glider by Semaro, used with explicit permission.
+- Racer Glider by Dubious, used with explicit permission.
 - Textures by Wareya, used with explicit permission.
 - Dust cloud by Kronbits -- https://kronbits.itch.io/particle-pack -- License: Creative Commons 0
 
 ## Animations
 
 - openmw-animated-levitation -- https://gitlab.com/fallchildren/openmw-animated-levitation -- License: GPL
-- glider by Dubious, used with explicit permission.
+- Racer Glider animation by Dubious, used with explicit permission.
+- Shield Surfing animation by Dubious, used with explicit permission.
 
 ### Third-Party Code
 
