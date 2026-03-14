@@ -41,8 +41,8 @@ local slopeDownMomentumRatio = 0.2
 local slopeUpMomentumRatio   = 0.8
 -- friction to decay momentum by
 local friction               = 0.015
--- radian threshold to start drifting
-local driftTurnThreshold     = 0.005
+-- radian threshold per second to start drifting
+local driftTurnThreshold     = 0.005 * 60
 -- how much yaw change contributes to side movement drift
 local driftFactor            = 1.1
 -- decay drift momentum by this amount per second
@@ -714,12 +714,12 @@ local function onFrame(dt)
         -- Don't give direct control over strafing.
         -- If the camera swings too much, automatically mix in strafing.
         local startingYaw = pself.controls.yawChange
-        if math.abs(startingYaw) < driftTurnThreshold then
+        if math.abs(startingYaw) < (driftTurnThreshold * dt) then
             startingYaw = 0
         elseif startingYaw < 0 then
-            startingYaw = startingYaw + driftTurnThreshold
+            startingYaw = startingYaw + (driftTurnThreshold * dt)
         elseif startingYaw > 0 then
-            startingYaw = startingYaw - driftTurnThreshold
+            startingYaw = startingYaw - (driftTurnThreshold * dt)
         end
         persist.driftMomentum = persist.driftMomentum + startingYaw * driftFactor
         if persist.driftMomentum > 0 then
