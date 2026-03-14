@@ -61,6 +61,7 @@ While in an unreadied stance (your weapon is sheathed and you don't have your sp
 - up draft with more wind.wav by SahJop, used with explicit permission.
 - Dwemer Glider/equip glider.wav by SahJop, used with explicit permission.
 - Racer Glider/equip glider.wav by SahJop, used with explicit permission.
+- trick sting.wav by SahJop, used with explicit permission.
 
 ### Meshes & Textures
 
