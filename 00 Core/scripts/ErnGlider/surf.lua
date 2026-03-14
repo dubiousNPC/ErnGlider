@@ -121,17 +121,19 @@ local sounds         = {
     land_hv = "Sound\\Fx\\FOOT\\land_hv.wav"
 }
 
-local shieldBone     = "Shield01" -- or maybe Bip01 Feet Midpoint -- or Shield01
+local shieldBone     = "Bip01 Shield01" -- or maybe Bip01 Feet Midpoint -- or Shield01
 local surfAnimations = {
-    forward = "shieldgo",         --"Shieldgo",
+    forward = "shieldgo",               --"Shieldgo",
     left = "sneakleft",
-    right = "sneakright"
+    right = "sneakright",
+    jump = "sneakforward"
 }
 
 local function cancelSurfAnimations()
     animation.cancel(pself, surfAnimations.forward)
     if surfAnimations.right then animation.cancel(pself, surfAnimations.right) end
     if surfAnimations.left then animation.cancel(pself, surfAnimations.left) end
+    if surfAnimations.jump then animation.cancel(pself, surfAnimations.jump) end
 end
 
 local function getShield()
@@ -367,7 +369,9 @@ local function applySurf()
     -- apply spell
     applySurfSpell()
 
-    blurShader:setEnabled(true)
+    if camera.getMode() ~= camera.MODE.Static then
+        blurShader:setEnabled(true)
+    end
 
     -- todo: unequip then re-equip shield?
     -- maybe just override the shield vfx for sheath mod somehow?
@@ -441,18 +445,24 @@ local function animate()
         --cancelSurfAnimations()
         if surfAnimations.left then animation.cancel(pself, surfAnimations.left) end
         if surfAnimations.right then animation.cancel(pself, surfAnimations.right) end
+        if surfAnimations.jump and not animation.isPlaying(pself, surfAnimations.jump) then
+            settings.debugPrint("anim start jump - " .. surfAnimations.jump)
+            animation.playBlended(pself, surfAnimations.jump, armsAnimationOptions)
+        end
         return
     end
 
     local armAnim = animation.getActiveGroup(pself, animation.BONE_GROUP.LeftArm)
     if surfAnimations.left and (pself.controls.sideMovement <= -1 * settings.main.deadzone) and surfAnimations.left ~= armAnim then
         animation.cancel(pself, surfAnimations.right)
+        animation.cancel(pself, surfAnimations.jump)
         if not animation.isPlaying(pself, surfAnimations.left) then
             settings.debugPrint("anim start left - " .. surfAnimations.left)
             animation.playBlended(pself, surfAnimations.left, armsAnimationOptions)
         end
     elseif surfAnimations.right and (pself.controls.sideMovement >= settings.main.deadzone) and surfAnimations.right ~= armAnim then
         animation.cancel(pself, surfAnimations.left)
+        animation.cancel(pself, surfAnimations.jump)
         if not animation.isPlaying(pself, surfAnimations.right) then
             settings.debugPrint("anim start right - " .. surfAnimations.right)
             animation.playBlended(pself, surfAnimations.right, armsAnimationOptions)
@@ -460,6 +470,7 @@ local function animate()
     elseif (math.abs(pself.controls.sideMovement) < settings.main.deadzone) then
         if surfAnimations.left then animation.cancel(pself, surfAnimations.left) end
         if surfAnimations.right then animation.cancel(pself, surfAnimations.right) end
+        if surfAnimations.jump then animation.cancel(pself, surfAnimations.jump) end
     end
 
     -- always play forward
@@ -484,7 +495,7 @@ local function onJump()
     persist.points.jumps = persist.points.jumps + 1
 end
 
-local conditionDebt = 0
+local conditionDebt = 1
 local rayCastDelay = 0
 
 local function onUpdate(dt)
@@ -540,8 +551,9 @@ local function onUpdate(dt)
             local safeHeight = 6 * util.remap(acrobatics, 0, 100, 0.1, 1) *
                 math.max(0.1, 1 - (weight / 50))
             if dropHeight > 0 and dropHeight > safeHeight then
+                -- damage is percentage based
                 local damage = math.ceil(math.sqrt((dropHeight - safeHeight)) * settings.surf.fallCost)
-                conditionDebt = conditionDebt + damage
+                conditionDebt = conditionDebt + (damage * persist.activeShieldRecord.health / 100)
                 settings.debugPrint("Big drop! Height: " .. tostring(dropHeight) .. ", damage: " .. tostring(damage))
                 -- play hard landing sound
                 core.sound.playSoundFile3d(sounds.land_hv, pself, {
@@ -557,7 +569,7 @@ local function onUpdate(dt)
                 })
             end
             animation.addVfx(pself, "meshes/ernglider/poof.nif",
-                { loop = false, boneName = shieldBone, vfxId = "right foot", useAmbientLight = false })
+                { loop = false, boneName = "Bip01 L Foot", vfxId = "poof", useAmbientLight = false })
         elseif not persist.landed then
             -- in air
             persist.maxHeightOnCurrentJump = math.max(persist.maxHeightOnCurrentJump, persist.currentFootPos.z)
@@ -638,7 +650,8 @@ local function onUpdate(dt)
             persist.momentum = util.clamp(persist.momentum - penalty, 0, 1)
         end
 
-        blurShader:update(util.clamp(util.remap(avgSpeed, 15, 200, 0, 1), 0, 0.005))
+        local blurStrength = util.remap(avgSpeed, 15, 200, 0, 1)
+        blurShader:update(util.clamp(blurStrength * blurStrength, 0, 0.005))
 
         chimtricky.display({
             dt = dt,
@@ -649,7 +662,7 @@ local function onUpdate(dt)
         })
     else
         -- not currently surfing
-        conditionDebt = 0
+        conditionDebt = 1
     end
 end
 

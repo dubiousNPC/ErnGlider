@@ -247,6 +247,8 @@ local function removeGlider()
     settings.debugPrint(aux_util.deepToString(allGliderAnimations, 3))
     for animName, present in pairs(allGliderAnimations) do
         if present then
+            -- TODO: these cancels are not working
+            --settings.debugPrint("cancel " .. animName)
             animation.cancel(pself, animName)
         end
     end

@@ -143,7 +143,7 @@ local function init()
                 key = "fallCost",
                 name = "fallCostName",
                 description = "fallCostDescription",
-                default = 5,
+                default = 1,
                 renderer = "number",
                 argument = {
                     integer = false,

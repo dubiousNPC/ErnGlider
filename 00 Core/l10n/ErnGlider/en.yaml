@@ -3,9 +3,9 @@ description: "Why walk when you can glide?"
 
 mainSettings: "Shared"
 gliderSettings: "Gliding"
-gliderDescription: "Gracefully glide through the air by double-jumping while your hands are unreadied, and you are moving neither forward nor backward."
+gliderDescription: "Gracefully glide through the air by double-jumping while your hands are unreadied, and you are moving neither forward nor backward.\nGliders and glider upgrades are only available through completing a quest."
 surfSettings: "Shield Surfing"
-surfDescription: "Slip down slopes by double-jumping while your hands are unreadied, and you are moving backward."
+surfDescription: "Slip down slopes on your shield by double-jumping while your hands are unreadied, and you are moving backward.\nLighter shields are more nimble and take less condition damage from falls.\nMedium shields are more efficient with fatigue.\nHeavy shields absorb all the impact from falls."
 
 enableName: "Enable"
 enableDescription: "Enable or disable this feature."
@@ -15,7 +15,7 @@ fatigueCostDescription: "Fatigue cost per second while gliding. If you run out o
 conditionCostName: "Shield Surf Condition Cost"
 conditionCostDescription: "Shield condition damage per second while surfing."
 fallCostName: "Fall Condition Cost Factor"
-fallCostDescription: "Influences how much damage your shield takes if you fall from too heigh."
+fallCostDescription: "Influences how much damage your shield takes if you fall from too high. Lighter shields take less fall damage."
 
 shadersName: "Enable Shaders"
 shadersDescription: "Turn on or off shader effects."
