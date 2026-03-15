@@ -30,7 +30,8 @@ local ui                 = require('openmw.ui')
 local aux_util           = require('openmw_aux.util')
 local interfaces         = require("openmw.interfaces")
 local settings           = require("scripts.ErnGlider.settings")
-local bar                = require("scripts.ErnGlider.bar")
+local bar                = require("scripts.ErnGlider.ui.bar")
+local toastcontainer     = require("scripts.ErnGlider.ui.toastcontainer")
 local localization       = core.l10n(MOD_NAME)
 local uiInterface        = require("openmw.interfaces").UI
 
@@ -41,6 +42,7 @@ local uiInterface        = require("openmw.interfaces").UI
 ---@field fatigueRatio number
 ---@field momentumRatio number
 ---@field points number
+---@field newToasts any[]
 
 ---@type DisplayData?
 local currentDisplayData = nil
@@ -105,6 +107,8 @@ local conditionBar  = bar.NewBar(1, configColor("weapon_fill"),
     lerpColor(configColor("weapon_fill"), util.color.rgba(0.9, 0.9, 0.9, 1), 0.7))
 local momentumBar   = bar.NewBar(1, configColor("journal_link"),
     lerpColor(configColor("journal_topic"), util.color.rgba(0.9, 0.9, 0.9, 1), 0.7))
+
+local toasts        = toastcontainer.NewToastContainer()
 
 local pointsElement = ui.create {
     name = "root",
@@ -183,6 +187,7 @@ local function display(data)
             statusElement:update()
             pointsElement.layout.props.visible = false
             pointsElement:update()
+            toasts:purgeToasts(true)
         end
         return
     else
@@ -234,6 +239,8 @@ local function display(data)
         end
     end
 
+    toasts:update(data.dt, data.newToasts)
+
     --settings.debugPrint(aux_util.deepToString(data, 3))
     statusElement:update()
     pointsElement:update()
@@ -242,6 +249,25 @@ local function display(data)
     currentDisplayData.dt = currentDisplayData.dt + oldDT
 end
 
+local function newTextToast(text, colorID)
+    colorID = colorID or "normal"
+    return ui.create {
+        type = ui.TYPE.Text,
+        props = {
+            text = text,
+            textColor = configColor(colorID),
+            textShadow = true,
+            textShadowColor = util.color.rgba(0, 0, 0, 0.9),
+            textAlignV = ui.ALIGNMENT.Center,
+            textAlignH = ui.ALIGNMENT.Center,
+            textSize = 18,
+            --relativePosition = util.vector2(0.5, 0.5),
+            anchor = util.vector2(0.5, 0.5),
+        }
+    }
+end
+
 return {
     display = display,
+    newTextToast = newTextToast,
 }

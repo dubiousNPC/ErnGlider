@@ -109,7 +109,7 @@ function NewBar(ratio, color, flashColor)
 end
 
 function BarFunctions.reset(self, newRatio)
-    self.ratio = newRatio
+    self.ratio = newRatio or 0
     self.flashRatio = 0
     self.elem:update()
 end

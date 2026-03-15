@@ -29,7 +29,7 @@ local nearby                 = require('openmw.nearby')
 local animation              = require('openmw.animation')
 local interfaces             = require("openmw.interfaces")
 local ringbuffer             = require("scripts.ErnGlider.ringbuffer")
-local chimtricky             = require("scripts.ErnGlider.chimtricky")
+local chimtricky             = require("scripts.ErnGlider.ui.chimtricky")
 local settings               = require("scripts.ErnGlider.settings")
 local blur                   = require("scripts.ErnGlider.blurshader")
 
@@ -516,6 +516,8 @@ local rayCastDelay = 0
 local function onUpdate(dt)
     if dt == 0 then return end
     if persist.applied then
+        local newToasts = {}
+
         if not settings.surf.enable then
             removeSurf()
             return
@@ -575,6 +577,8 @@ local function onUpdate(dt)
                     volume = settings.main.volume,
                     loop = false,
                 })
+                local dropToast = chimtricky.newTextToast("Big Drop!", "negative")
+                table.insert(newToasts, dropToast)
             else
                 settings.debugPrint("Small drop of height " .. tostring(dropHeight))
                 -- play softer landing sound
@@ -675,6 +679,7 @@ local function onUpdate(dt)
             fatigueRatio = fatigueStat.current / fatigueStat.base,
             momentumRatio = util.remap(persist.momentum, kickoutMinimumMomentum, 1, 0, 1),
             points = calcPoints(false),
+            newToasts = newToasts,
         })
     else
         -- not currently surfing
