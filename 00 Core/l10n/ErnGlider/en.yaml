@@ -29,3 +29,4 @@ chimTrickyDescription: "Use a custom HUD while surfing."
 # CHIM Tricky stuff
 kph: "{value} kph"
 dropToast: "{height}m Drop!"
+airToast: "{duration}s Airtime!"

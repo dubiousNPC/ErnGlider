@@ -40,7 +40,7 @@ local startMomentum          = 0.2
 -- downward slope bonus factor
 local slopeDownMomentumRatio = 0.2
 -- upward slope penalty factor
-local slopeUpMomentumRatio   = 0.8
+local slopeUpMomentumRatio   = 0.6
 -- friction per second to decay momentum by
 local friction               = 0.015 * 60
 -- radian threshold per second to start drifting
@@ -79,6 +79,7 @@ local persist                = {
     sideMovement = 0,
     startHeightOnCurrentJump = 0,
     maxHeightOnCurrentJump = 0,
+    airTimeDurationOnCurrentJump = 0,
     points = {
         slidePoints = 0,
         airPoints = 0,
@@ -231,6 +232,9 @@ local function onLoad(data)
     if persist.driftMomentum == nil then
         persist.driftMomentum = 0
     end
+    if persist.airTimeDurationOnCurrentJump == nil then
+        persist.airTimeDurationOnCurrentJump = 0
+    end
 end
 local function onSave()
     return persist
@@ -361,6 +365,7 @@ local function applySurf()
     persist.slope = 0
     persist.startHeightOnCurrentJump = persist.lastFootPos.z
     persist.maxHeightOnCurrentJump = persist.lastFootPos.z
+    persist.airTimeDurationOnCurrentJump = 0
 
     -- set up next run
     persist.points = {
@@ -553,6 +558,7 @@ local function onUpdate(dt)
         if justJumped then
             persist.startHeightOnCurrentJump = getFootPos().z
             persist.maxHeightOnCurrentJump = persist.startHeightOnCurrentJump
+            persist.airTimeDurationOnCurrentJump = 0
             core.sound.playSoundFile3d(sounds.jump_start, pself, {
                 volume = settings.main.volume,
                 loop = false,
@@ -598,11 +604,18 @@ local function onUpdate(dt)
                     toastColor)
                 table.insert(newToasts, dropToast)
             end
+            if persist.airTimeDurationOnCurrentJump > 1 then
+                local airToast = toasts.newTextToast(localization("airToast",
+                        { duration = string.format("%.1f", persist.airTimeDurationOnCurrentJump) }),
+                    "positive")
+                table.insert(newToasts, airToast)
+            end
             animation.addVfx(pself, "meshes/ernglider/poof.nif",
                 { loop = false, boneName = "Bip01 L Foot", vfxId = "poof", useAmbientLight = false })
         elseif not persist.landed then
             -- in air
             persist.maxHeightOnCurrentJump = math.max(persist.maxHeightOnCurrentJump, persist.currentFootPos.z)
+            persist.airTimeDurationOnCurrentJump = persist.airTimeDurationOnCurrentJump + dt
         end
 
         -- update gravel sound
@@ -705,8 +718,8 @@ end
 local function slopeMomentumFactor(slope)
     slope = util.clamp(slope, -1, 1)
     if slope > 0 then
-        -- quadratic ease-in when going uphill
-        return slopeUpMomentumRatio * slope * slope
+        -- linear when going uphill
+        return slopeUpMomentumRatio * slope
     else
         -- quadratic ease-out when going downhill
         return slopeDownMomentumRatio * quadraticEaseOut(slope)
