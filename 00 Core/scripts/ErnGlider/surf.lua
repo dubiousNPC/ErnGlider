@@ -26,10 +26,12 @@ local types                  = require('openmw.types')
 local input                  = require('openmw.input')
 local controls               = require('openmw.interfaces').Controls
 local nearby                 = require('openmw.nearby')
+local localization           = core.l10n(MOD_NAME)
 local animation              = require('openmw.animation')
 local interfaces             = require("openmw.interfaces")
 local ringbuffer             = require("scripts.ErnGlider.ringbuffer")
 local chimtricky             = require("scripts.ErnGlider.ui.chimtricky")
+local toasts                 = require("scripts.ErnGlider.ui.toasts")
 local settings               = require("scripts.ErnGlider.settings")
 local blur                   = require("scripts.ErnGlider.blurshader")
 
@@ -55,6 +57,8 @@ local kickoutMinimumMomentum = 0.15
 local minFatigue             = 1
 -- if speed drops below this kph, start reducing momentum
 local kickoutMinimumSpeed    = 3
+-- influence which drops don't cause damage
+local safeDropHeightFactor   = 15
 
 local pointsPerSlideSecond   = 2
 local pointsPerJump          = 1
@@ -559,26 +563,27 @@ local function onUpdate(dt)
         if justLanded then
             persist.landed = true
             settings.debugPrint("Landed!")
-            local dropHeight = (persist.maxHeightOnCurrentJump - persist.currentFootPos.z) /
-                pself:getBoundingBox().halfSize.z
+            local rawDropHeight = persist.maxHeightOnCurrentJump - persist.currentFootPos.z
+            local dropHeight = rawDropHeight / pself:getBoundingBox().halfSize.z
             local acrobatics = pself.type.stats.skills.acrobatics(pself).modified
             local weight = persist.activeShieldRecord.weight
             -- heavy shields take more damage on drops because they generally have
             -- more total Condition, and also Slowfall.
-            local safeHeight = 6 * util.remap(acrobatics, 0, 100, 0.1, 1) *
+            local safeHeight = 1 + safeDropHeightFactor * util.remap(acrobatics, 0, 100, 0.5, 1) *
                 math.max(0.1, 1 - (weight / 50))
+            local toastColor = "positive"
             if dropHeight > 0 and dropHeight > safeHeight then
                 -- damage is percentage based
                 local damage = math.ceil(math.sqrt((dropHeight - safeHeight)) * settings.surf.fallCost)
                 conditionDebt = conditionDebt + (damage * persist.activeShieldRecord.health / 100)
-                settings.debugPrint("Big drop! Height: " .. tostring(dropHeight) .. ", damage: " .. tostring(damage))
+                settings.debugPrint("Big drop! Height: " ..
+                    tostring(dropHeight) .. ", damage: " .. tostring(damage) .. ", safe: " .. tostring(safeHeight))
                 -- play hard landing sound
                 core.sound.playSoundFile3d(sounds.landing_hard, pself, {
                     volume = settings.main.volume,
                     loop = false,
                 })
-                local dropToast = chimtricky.newTextToast("Big Drop!", "negative")
-                table.insert(newToasts, dropToast)
+                toastColor = "negative"
             else
                 settings.debugPrint("Small drop of height " .. tostring(dropHeight))
                 -- play softer landing sound
@@ -586,6 +591,12 @@ local function onUpdate(dt)
                     volume = settings.main.volume,
                     loop = false,
                 })
+            end
+            if rawDropHeight > 70 * 3 then
+                local dropToast = toasts.newTextToast(localization("dropToast",
+                        { height = math.floor(rawDropHeight / 70) }),
+                    toastColor)
+                table.insert(newToasts, dropToast)
             end
             animation.addVfx(pself, "meshes/ernglider/poof.nif",
                 { loop = false, boneName = "Bip01 L Foot", vfxId = "poof", useAmbientLight = false })

@@ -26,4 +26,6 @@ volumeDescription: "Sound effect volume factor."
 chimTrickyName: "CHIM Tricky"
 chimTrickyDescription: "Use a custom HUD while surfing."
 
+# CHIM Tricky stuff
 kph: "{value} kph"
+dropToast: "{height}m Drop!"

@@ -63,7 +63,7 @@ function ToastFunctions.update(self, dt)
     self.elapsedTime = self.elapsedTime + dt
     local age = util.remap(self.elapsedTime, self.startTime, self.expiryTime, 0, 1)
     self.elem.layout.props.alpha = quadraticEaseOut(1 - age)
-    print(tostring(self.elem.layout.props.alpha))
+    --print(tostring(self.elem.layout.props.alpha))
     self.elem:update()
 end
 

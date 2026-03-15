@@ -30,6 +30,7 @@ local ui                 = require('openmw.ui')
 local aux_util           = require('openmw_aux.util')
 local interfaces         = require("openmw.interfaces")
 local settings           = require("scripts.ErnGlider.settings")
+local common             = require("scripts.ErnGlider.ui.common")
 local bar                = require("scripts.ErnGlider.ui.bar")
 local toastcontainer     = require("scripts.ErnGlider.ui.toastcontainer")
 local localization       = core.l10n(MOD_NAME)
@@ -47,22 +48,14 @@ local uiInterface        = require("openmw.interfaces").UI
 ---@type DisplayData?
 local currentDisplayData = nil
 
--- from PCP-OpenMW
--- Get a usable color value from a fallback in openmw.cfg
-local function configColor(setting)
-    local v = core.getGMST('FontColor_color_' .. setting)
-    local values = {}
-    for i in v:gmatch('([^,]+)') do table.insert(values, tonumber(i)) end
-    local color = util.color.rgb(values[1] / 255, values[2] / 255, values[3] / 255)
-    return color
-end
+
 
 local pointsText          = ui.create {
     type = ui.TYPE.Text,
     name = "pointsText",
     props = {
         text = "0",
-        textColor = configColor("normal"),
+        textColor = common.configColor("normal"),
         textShadow = true,
         textShadowColor = util.color.rgba(0, 0, 0, 0.9),
         --textAlignV = ui.ALIGNMENT.Start,
@@ -73,8 +66,8 @@ local pointsText          = ui.create {
     }
 }
 
-local kphNormalColor      = configColor("normal")
-local kphMaxMomentumColor = configColor("positive")
+local kphNormalColor      = common.configColor("normal")
+local kphMaxMomentumColor = common.configColor("positive")
 local kphText             = ui.create {
     type = ui.TYPE.Text,
     name = "speedText",
@@ -101,12 +94,12 @@ local function lerpColor(a, b, t)
     )
 end
 
-local fatigueBar    = bar.NewBar(1, configColor("fatigue"),
-    lerpColor(configColor("fatigue"), util.color.rgba(0.9, 0.9, 0.9, 1), 0.7))
-local conditionBar  = bar.NewBar(1, configColor("weapon_fill"),
-    lerpColor(configColor("weapon_fill"), util.color.rgba(0.9, 0.9, 0.9, 1), 0.7))
-local momentumBar   = bar.NewBar(1, configColor("journal_link"),
-    lerpColor(configColor("journal_topic"), util.color.rgba(0.9, 0.9, 0.9, 1), 0.7))
+local fatigueBar    = bar.NewBar(1, common.configColor("fatigue"),
+    lerpColor(common.configColor("fatigue"), util.color.rgba(0.9, 0.9, 0.9, 1), 0.7))
+local conditionBar  = bar.NewBar(1, common.configColor("weapon_fill"),
+    lerpColor(common.configColor("weapon_fill"), util.color.rgba(0.9, 0.9, 0.9, 1), 0.7))
+local momentumBar   = bar.NewBar(1, common.configColor("journal_link"),
+    lerpColor(common.configColor("journal_topic"), util.color.rgba(0.9, 0.9, 0.9, 1), 0.7))
 
 local toasts        = toastcontainer.NewToastContainer()
 
@@ -249,25 +242,6 @@ local function display(data)
     currentDisplayData.dt = currentDisplayData.dt + oldDT
 end
 
-local function newTextToast(text, colorID)
-    colorID = colorID or "normal"
-    return ui.create {
-        type = ui.TYPE.Text,
-        props = {
-            text = text,
-            textColor = configColor(colorID),
-            textShadow = true,
-            textShadowColor = util.color.rgba(0, 0, 0, 0.9),
-            textAlignV = ui.ALIGNMENT.Center,
-            textAlignH = ui.ALIGNMENT.Center,
-            textSize = 18,
-            --relativePosition = util.vector2(0.5, 0.5),
-            anchor = util.vector2(0.5, 0.5),
-        }
-    }
-end
-
 return {
     display = display,
-    newTextToast = newTextToast,
 }
