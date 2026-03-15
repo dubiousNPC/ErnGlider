@@ -68,6 +68,7 @@ local maxSpeedPointsModifier = 50
 local persist                = {
     applied = false,
     appliedDuration = 0,
+    maxMomentumThisRun = startMomentum,
     momentum = startMomentum,
     driftMomentum = 0,
     activeShield = nil,
@@ -357,6 +358,7 @@ local function applySurf()
     persist.activeShield = nil
     persist.applied = true
     persist.momentum = startMomentum
+    persist.maxMomentumThisRun = startMomentum
     persist.driftMomentum = 0
     persist.landed = false
 
@@ -695,6 +697,15 @@ local function onUpdate(dt)
 
         local blurStrength = util.remap(avgSpeed, 15, 200, 0, 1)
         blurShader:update(util.clamp(blurStrength * blurStrength, 0, 0.005))
+
+        if persist.momentum > persist.maxMomentumThisRun then
+            persist.maxMomentumThisRun = persist.momentum
+            if persist.maxMomentumThisRun >= 1 then
+                local momentumToast = toasts.newTextToast(localization("momentumToast"),
+                    "positive")
+                table.insert(newToasts, momentumToast)
+            end
+        end
 
         chimtricky.display({
             dt = dt,
