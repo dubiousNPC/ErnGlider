@@ -52,6 +52,8 @@ While in an unreadied stance (your weapon is sheathed and you don't have your sp
 
 ## Credits
 
+Erin coded this, but this wouldn't have been possible without the help of a lot of people. Special thanks to Dubious, Semaro, SahJop, Greatness7, S3ctor, and the rest of the OpenMW modding community.
+
 ### Sounds
 
 - Wind 1 Loop by jasoneweber -- https://freesound.org/s/179110/ -- License: Attribution 3.0
@@ -62,6 +64,8 @@ While in an unreadied stance (your weapon is sheathed and you don't have your sp
 - Dwemer Glider/equip glider.wav by SahJop, used with explicit permission.
 - Racer Glider/equip glider.wav by SahJop, used with explicit permission.
 - trick sting.wav by SahJop, used with explicit permission.
+- landing soft.wav by SahJop, used with explicit permission.
+- landing hard.wav by SahJop, used with explicit permission.
 
 ### Meshes & Textures
 
@@ -80,6 +84,7 @@ While in an unreadied stance (your weapon is sheathed and you don't have your sp
 
 - openmw-animated-levitation -- https://gitlab.com/fallchildren/openmw-animated-levitation -- License: GPL
 - PCP-OpenMW by Qlonever -- https://github.com/Qlonever/PCP-OpenMW) -- License: MIT
+
 
 ## TODO
 

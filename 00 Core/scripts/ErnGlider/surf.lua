@@ -121,9 +121,9 @@ local sounds         = {
     gravel_road = getSoundFilePath("gravel_road.mp3"),
     hit_wall = "Sound\\Fx\\body hit.wav",
     jump_start = "Sound\\ErnGlider\\light_smack.ogg",
-    land_lt = "Sound\\Fx\\FOOT\\land_lt.wav",
-    land_md = "Sound\\Fx\\FOOT\\land_md.wav",
-    land_hv = "Sound\\Fx\\FOOT\\land_hv.wav"
+    unequip = "Sound\\Fx\\FOOT\\land_lt.wav",
+    landing_soft = getSoundFilePath("landing soft.wav"),
+    landing_hard = getSoundFilePath("landing hard.wav")
 }
 
 local shieldBone     = "Bip01 Shieldsurf" --Bip01 Shieldsurf
@@ -315,7 +315,7 @@ local function removeSurf(wipeout)
     core.sound.stopSoundFile3d(sounds.wind, pself)
     core.sound.stopSoundFile3d(sounds.gravel_road, pself)
     -- play ending sound
-    core.sound.playSoundFile3d(sounds.land_lt, pself, {
+    core.sound.playSoundFile3d(sounds.unequip, pself, {
         volume = settings.main.volume,
         loop = false,
     })
@@ -571,14 +571,14 @@ local function onUpdate(dt)
                 conditionDebt = conditionDebt + (damage * persist.activeShieldRecord.health / 100)
                 settings.debugPrint("Big drop! Height: " .. tostring(dropHeight) .. ", damage: " .. tostring(damage))
                 -- play hard landing sound
-                core.sound.playSoundFile3d(sounds.land_hv, pself, {
+                core.sound.playSoundFile3d(sounds.landing_hard, pself, {
                     volume = settings.main.volume,
                     loop = false,
                 })
             else
                 settings.debugPrint("Small drop of height " .. tostring(dropHeight))
                 -- play softer landing sound
-                core.sound.playSoundFile3d(sounds.land_md, pself, {
+                core.sound.playSoundFile3d(sounds.landing_soft, pself, {
                     volume = settings.main.volume,
                     loop = false,
                 })
