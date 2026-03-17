@@ -108,13 +108,7 @@ local surfShieldWeightSpells = {
         ignoreSpellAbsorption = true,
         ignoreReflect = true
     },
-    heavy = {
-        id = "eg_surf_heavy",
-        effects = { 0 },
-        ignoreResistances = true,
-        ignoreSpellAbsorption = true,
-        ignoreReflect = true
-    }
+    -- heavy = nil
 }
 
 local function getSoundFilePath(file)
@@ -196,12 +190,15 @@ end
 local function applySurfSpell()
     pself.type.activeSpells(pself):add({
         id = surfSpell,
-        effects = { 0, 1, 2 },
+        effects = { 0, 1, 2, 3 },
         ignoreResistances = true,
         ignoreSpellAbsorption = true,
         ignoreReflect = true
     })
-    pself.type.activeSpells(pself):add(getSurfWeightSpell())
+    local weightSpecificSpell = getSurfWeightSpell()
+    if weightSpecificSpell then
+        pself.type.activeSpells(pself):add(weightSpecificSpell)
+    end
 end
 
 local forward = util.vector3(0.0, 1.0, 0.0)
@@ -310,7 +307,6 @@ local function removeSurf(wipeout)
         [surfSpell] = true,
         [surfShieldWeightSpells.light.id] = true,
         [surfShieldWeightSpells.medium.id] = true,
-        [surfShieldWeightSpells.heavy.id] = true
     }
     --settings.debugPrint(aux_util.deepToString(spellsToRemove, 3))
     for _, spell in pairs(pself.type.activeSpells(pself)) do
@@ -390,8 +386,6 @@ local function applySurf()
     core.sound.playSoundFile3d(sounds.breath_in, pself, {
         volume = settings.main.volume,
     })
-    -- apply spell
-    applySurfSpell()
 
     if camera.getMode() ~= camera.MODE.Static then
         blurShader:setEnabled(true)
@@ -543,6 +537,12 @@ local function onUpdate(dt)
             removeSurf()
         end
 
+        if persist.landed and (persist.momentum <= kickoutMinimumMomentum) then
+            settings.debugPrint("out of momentum")
+            removeSurf()
+            return
+        end
+
         local justLanded = false
         local justJumped = false
         if types.Actor.isOnGround(pself) then
@@ -550,6 +550,8 @@ local function onUpdate(dt)
                 justLanded = true
             end
             persist.landed = true
+            -- apply spell
+            applySurfSpell()
         else
             if persist.landed then
                 justJumped = true
@@ -687,17 +689,17 @@ local function onUpdate(dt)
 
         -- speed-related stuff
         local avgSpeed = currentSpeed:getAverage()
-
-        -- catch-all for weird situations
-        if avgSpeed < kickoutMinimumSpeed and types.Actor.isOnGround(pself) then
-            local penalty = util.remap(avgSpeed, 0, kickoutMinimumSpeed, 0, 0.1)
-            settings.debugPrint("Too slow! Penalty: " .. tostring(penalty))
-            persist.momentum = util.clamp(persist.momentum - penalty, 0, 1)
-        end
-
         local blurStrength = util.remap(avgSpeed, 15, 200, 0, 1)
         blurShader:update(util.clamp(blurStrength * blurStrength, 0, 0.005))
 
+        -- catch-all for weird situations
+        --[[if avgSpeed < kickoutMinimumSpeed and types.Actor.isOnGround(pself) then
+            local penalty = util.remap(avgSpeed, 0, kickoutMinimumSpeed, 0, 0.1)
+            settings.debugPrint("Too slow! Penalty: " .. tostring(penalty))
+            persist.momentum = util.clamp(persist.momentum - penalty, 0, 1)
+            end]]
+
+        -- max speed toast
         if persist.momentum > persist.maxMomentumThisRun then
             persist.maxMomentumThisRun = persist.momentum
             if persist.maxMomentumThisRun >= 1 then
@@ -706,6 +708,7 @@ local function onUpdate(dt)
                 table.insert(newToasts, momentumToast)
             end
         end
+
 
         chimtricky.display({
             dt = dt,
@@ -726,11 +729,16 @@ local function quadraticEaseOut(x)
     return 1 - (1 - x) * (1 - x)
 end
 
+local function sineEaseIn(x)
+    return 1 - math.cos((x * math.pi) / 2)
+end
+
 local function slopeMomentumFactor(slope)
     slope = util.clamp(slope, -1, 1)
     if slope > 0 then
-        -- linear when going uphill
-        return slopeUpMomentumRatio * slope
+        local weight = persist.activeShieldRecord.weight
+        -- sine ease-in when going uphill
+        return slopeUpMomentumRatio * sineEaseIn(slope) * util.clamp((1 - (weight / 100)), 0.5, 1)
     else
         -- quadratic ease-out when going downhill
         return slopeDownMomentumRatio * quadraticEaseOut(slope)
@@ -744,11 +752,6 @@ local function onFrame(dt)
             persist.momentum = util.clamp(persist.momentum - (friction * dt + slopeMomentumFactor(persist.slope)) * dt,
                 0,
                 1)
-            if persist.landed and (persist.momentum <= kickoutMinimumMomentum) then
-                settings.debugPrint("out of momentum")
-                removeSurf()
-                return
-            end
             if persist.momentum > 1.5 * kickoutMinimumMomentum then
                 persist.points.slidePoints = persist.points.slidePoints +
                     pointsPerSlideSecond * dt * persist.momentum * persist.momentum

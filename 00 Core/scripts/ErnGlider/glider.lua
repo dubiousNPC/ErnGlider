@@ -15,34 +15,37 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]
-local MOD_NAME          = require("scripts.ErnGlider.ns")
-local core              = require("openmw.core")
-local pself             = require("openmw.self")
-local camera            = require('openmw.camera')
-local util              = require('openmw.util')
-local async             = require("openmw.async")
-local types             = require('openmw.types')
-local input             = require('openmw.input')
-local controls          = require('openmw.interfaces').Controls
-local nearby            = require('openmw.nearby')
-local animation         = require('openmw.animation')
-local aux_util          = require('openmw_aux.util')
-local interfaces        = require("openmw.interfaces")
-local settings          = require("scripts.ErnGlider.settings")
-local updraftShader     = require("scripts.ErnGlider.updraftshader")
+local MOD_NAME           = require("scripts.ErnGlider.ns")
+local core               = require("openmw.core")
+local pself              = require("openmw.self")
+local camera             = require('openmw.camera')
+local util               = require('openmw.util')
+local async              = require("openmw.async")
+local types              = require('openmw.types')
+local input              = require('openmw.input')
+local controls           = require('openmw.interfaces').Controls
+local nearby             = require('openmw.nearby')
+local animation          = require('openmw.animation')
+local aux_util           = require('openmw_aux.util')
+local interfaces         = require("openmw.interfaces")
+local settings           = require("scripts.ErnGlider.settings")
+local updraftShader      = require("scripts.ErnGlider.updraftshader")
 
-local glideranim        = require("scripts.ErnGlider.glideranim")
+local glideranim         = require("scripts.ErnGlider.glideranim")
 
 -- how much yaw change contributes to side movement drift
-local driftFactor       = 3.0
+local driftFactor        = 3.0
 -- side movement is multiplied by this each frame so it decays back to 0
-local driftDecay        = 0.9
+local driftDecay         = 0.9
 -- prevent gliding when fatigue is at this level.
-local minFatigue        = 1
+local minFatigue         = 1
 
-local updraftShaderInst = updraftShader.NewUpdraftShader()
+local fFatigueReturnBase = core.getGMST("fFatigueReturnBase")
+local fFatigueReturnMult = core.getGMST("fFatigueReturnMult")
 
-local persist           = {
+local updraftShaderInst  = updraftShader.NewUpdraftShader()
+
+local persist            = {
     applied = false,
     appliedDuration = 0,
     sideMovement = 0,
@@ -139,7 +142,8 @@ local function instantCost()
 end
 
 local function naturalFatigueRegenRate()
-    return 2.5 + (0.02 * enduranceStat.modified)
+    -- fFatigueReturnBase + (fFatigueReturnMult * endurance)
+    return fFatigueReturnBase + (fFatigueReturnMult * enduranceStat.modified)
 end
 
 local function onInit(initData)
