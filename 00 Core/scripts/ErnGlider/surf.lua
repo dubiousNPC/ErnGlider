@@ -72,7 +72,12 @@ local persist                = {
     momentum = startMomentum,
     driftMomentum = 0,
     activeShield = nil,
-    activeShieldRecord = nil,
+    --activeShieldRecord = nil, -- BUG! this is not serializable
+    activeShieldRecord = {
+        weight = 0,
+        model = "",
+        health = 0,
+    },
     landed = false,
     lastFootPos = nil,
     currentFootPos = nil,
@@ -154,7 +159,12 @@ local function getShield()
 
     if types.Armor.records[leftHand.recordId].type == types.Armor.TYPE.Shield then
         persist.activeShield = leftHand
-        persist.activeShieldRecord = types.Armor.records[leftHand.recordId]
+        local record = types.Armor.records[leftHand.recordId]
+        persist.activeShieldRecord = {
+            weight = record.weight,
+            model = record.model,
+            health = record.health,
+        }
         return persist.activeShield
     end
     persist.activeShield = nil
