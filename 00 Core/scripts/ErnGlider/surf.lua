@@ -74,6 +74,7 @@ local persist                = {
     activeShield = nil,
     --activeShieldRecord = nil, -- BUG! this is not serializable
     activeShieldRecord = {
+        instance = nil,
         weight = 0,
         model = "",
         health = 0,
@@ -297,6 +298,20 @@ end
 
 local currentSpeed = ringbuffer.new(20)
 
+local function removeSpells()
+    local spellsToRemove = {
+        [surfSpell] = true,
+        [surfShieldWeightSpells.light.id] = true,
+        [surfShieldWeightSpells.medium.id] = true,
+    }
+    for _, spell in pairs(pself.type.activeSpells(pself)) do
+        if spellsToRemove[spell.id] then
+            pself.type.activeSpells(pself):remove(spell.activeSpellId)
+        end
+    end
+end
+local removeSpellsCallback = async:registerTimerCallback("removeSpellsCallback", removeSpells)
+
 local function removeSurf(wipeout)
     if not persist.applied then
         return
@@ -312,18 +327,11 @@ local function removeSurf(wipeout)
     -- todo: this will probably be bad
     pself.controls.run = false
     currentSpeed:reset()
-    -- remove spell effects
-    local spellsToRemove = {
-        [surfSpell] = true,
-        [surfShieldWeightSpells.light.id] = true,
-        [surfShieldWeightSpells.medium.id] = true,
-    }
-    --settings.debugPrint(aux_util.deepToString(spellsToRemove, 3))
-    for _, spell in pairs(pself.type.activeSpells(pself)) do
-        if spellsToRemove[spell.id] then
-            pself.type.activeSpells(pself):remove(spell.activeSpellId)
-        end
-    end
+
+    -- do this twice because it breaks sometimes
+    removeSpells()
+    async:newSimulationTimer(0.01, removeSpellsCallback)
+
     -- remove vfx
     animation.removeVfx(pself, "surf")
     -- remove sound
