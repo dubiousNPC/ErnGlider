@@ -58,7 +58,7 @@ local minFatigue             = 1
 -- if speed drops below this kph, start reducing momentum
 local kickoutMinimumSpeed    = 3
 -- influence which drops don't cause damage
-local safeDropHeightFactor   = 15
+local safeDropHeightFactor   = 13
 
 local pointsPerSlideSecond   = 2
 local pointsPerJump          = 1
@@ -595,10 +595,8 @@ local function onUpdate(dt)
             local dropHeight = rawDropHeight / pself:getBoundingBox().halfSize.z
             local acrobatics = pself.type.stats.skills.acrobatics(pself).modified
             local weight = persist.activeShieldRecord.weight
-            -- heavy shields take more damage on drops because they generally have
-            -- more total Condition, and also Slowfall.
-            local safeHeight = 1 + safeDropHeightFactor * util.remap(acrobatics, 0, 100, 0.5, 1) *
-                math.max(0.1, 1 - (weight / 50))
+            local safeHeight = 1 + safeDropHeightFactor * util.clamp(util.remap(acrobatics, 0, 100, 0.5, 1) *
+                (1 - (weight / 50)), 0.5, 1)
             local toastColor = "positive"
             if dropHeight > 0 and dropHeight > safeHeight then
                 -- damage is percentage based
