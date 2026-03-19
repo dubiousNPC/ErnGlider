@@ -320,6 +320,8 @@ local function removeSurf(wipeout)
     persist.applied = false
     persist.appliedDuration = 0
     persist.landed = false
+    persist.activeShield = nil
+    persist.activeShieldRecord = nil
     print("Removing surf...")
     -- reset movement
     persist.sideMovement = 0
