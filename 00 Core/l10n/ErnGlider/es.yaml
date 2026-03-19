@@ -1,0 +1,33 @@
+name: "Planeador"
+description: "¿Para qué caminar cuando puedes planear?"
+
+mainSettings: "General"
+gliderSettings: "Planeo"
+gliderDescription: "Planea con gracia por el aire realizando un doble salto cuando tus manos no tienen nada equipado y no te estás moviendo ni hacia adelante ni hacia atrás.\nLos planeadores y sus mejoras solo están disponibles al completar una misión."
+surfSettings: "Surf con escudo"
+surfDescription: "Deslízate por las pendientes sobre tu escudo realizando un doble salto cuando tus manos no tienen nada equipado y te estás moviendo hacia atrás."
+
+enableName: "Activar"
+enableDescription: "Activa o desactiva esta función."
+debugName: "Modo de depuración"
+fatigueCostName: "Costo de fatiga del planeador"
+fatigueCostDescription: "Costo de fatiga por segundo mientras planeas. Si te quedas sin fatiga, caerás. La regeneración natural de fatiga se detiene mientras planeas."
+conditionCostName: "Costo de durabilidad al surfear con escudo"
+conditionCostDescription: "Daño a la durabilidad del escudo por segundo mientras haces surf."
+fallCostName: "Factor de daño por caída"
+fallCostDescription: "Influye en cuánto daño recibe tu escudo si caes desde demasiada altura. Los escudos más ligeros reciben menos daño por caída."
+
+shadersName: "Activar shaders"
+shadersDescription: "Activa o desactiva los efectos de shader."
+deadzoneName: "Zona muerta del controlador"
+deadzoneDescription: "Ajusta la zona muerta para determinar si te mueves hacia adelante o hacia atrás. Solo útil para sticks analógicos."
+volumeName: "Volumen"
+volumeDescription: "Factor de volumen de los efectos de sonido."
+chimTrickyName: "CHIM Tricky"
+chimTrickyDescription: "Usar una interfaz HUD personalizada mientras haces surf."
+
+# CHIM Tricky stuff
+kph: "{value} km/h"
+dropToast: "¡Caída de {height} m!"
+airToast: "¡{duration} s en el aire!"
+momentumToast: "¡Velocidad máxima!"

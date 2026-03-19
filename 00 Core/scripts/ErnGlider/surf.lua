@@ -55,8 +55,6 @@ local maxDrift               = 0.8
 local kickoutMinimumMomentum = 0.15
 -- prevent surfing when fatigue is at this level.
 local minFatigue             = 1
--- if speed drops below this kph, start reducing momentum
-local kickoutMinimumSpeed    = 3
 -- influence which drops don't cause damage
 local safeDropHeightFactor   = 13
 
@@ -72,7 +70,6 @@ local persist                = {
     momentum = startMomentum,
     driftMomentum = 0,
     activeShield = nil,
-    --activeShieldRecord = nil, -- BUG! this is not serializable
     activeShieldRecord = {
         instance = nil,
         weight = 0,
@@ -710,13 +707,6 @@ local function onUpdate(dt)
         local avgSpeed = currentSpeed:getAverage()
         local blurStrength = util.remap(avgSpeed, 15, 200, 0, 1)
         blurShader:update(util.clamp(blurStrength * blurStrength, 0, 0.005))
-
-        -- catch-all for weird situations
-        --[[if avgSpeed < kickoutMinimumSpeed and types.Actor.isOnGround(pself) then
-            local penalty = util.remap(avgSpeed, 0, kickoutMinimumSpeed, 0, 0.1)
-            settings.debugPrint("Too slow! Penalty: " .. tostring(penalty))
-            persist.momentum = util.clamp(persist.momentum - penalty, 0, 1)
-            end]]
 
         -- max speed toast
         if persist.momentum > persist.maxMomentumThisRun then

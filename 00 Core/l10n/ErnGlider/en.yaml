@@ -5,7 +5,7 @@ mainSettings: "Shared"
 gliderSettings: "Gliding"
 gliderDescription: "Gracefully glide through the air by double-jumping while your hands are unreadied, and you are moving neither forward nor backward.\nGliders and glider upgrades are only available through completing a quest."
 surfSettings: "Shield Surfing"
-surfDescription: "Slip down slopes on your shield by double-jumping while your hands are unreadied, and you are moving backward.\nLighter shields are more nimble and take less condition damage from falls.\nMedium shields are more efficient with fatigue.\nHeavy shields lose less momentum when going uphill."
+surfDescription: "Slip down slopes on your shield by double-jumping while your hands are unreadied, and you are moving backward."
 
 enableName: "Enable"
 enableDescription: "Enable or disable this feature."
