@@ -1,0 +1,33 @@
+name: "滑翔器"
+description: "既然可以滑翔，何必行走？"
+
+mainSettings: "通用"
+gliderSettings: "滑翔"
+gliderDescription: "当你的双手未装备物品且既不向前也不向后移动时，通过二段跳可以在空中优雅滑翔。\n滑翔器及其升级只能通过完成任务获得。"
+surfSettings: "盾牌滑行"
+surfDescription: "当你的双手未装备物品且向后移动时，通过二段跳可以在盾牌上沿坡面滑行。"
+
+enableName: "启用"
+enableDescription: "启用或禁用此功能。"
+debugName: "调试模式"
+fatigueCostName: "滑翔体力消耗"
+fatigueCostDescription: "滑翔时每秒消耗的体力。如果体力耗尽，你会坠落。滑翔时体力不会自然恢复。"
+conditionCostName: "盾牌滑行耐久消耗"
+conditionCostDescription: "滑行时每秒对盾牌耐久造成的损耗。"
+fallCostName: "坠落耐久损耗系数"
+fallCostDescription: "影响从过高处坠落时盾牌受到的损伤。较轻的盾牌受到的坠落伤害更少。"
+
+shadersName: "启用着色器"
+shadersDescription: "开启或关闭着色器效果。"
+deadzoneName: "控制器死区"
+deadzoneDescription: "调整用于判断前进或后退的死区。仅对模拟摇杆有用。"
+volumeName: "音量"
+volumeDescription: "音效音量系数。"
+chimTrickyName: "CHIM Tricky"
+chimTrickyDescription: "滑行时使用自定义 HUD。"
+
+# CHIM Tricky stuff
+kph: "{value} 公里/小时"
+dropToast: "{height}米坠落！"
+airToast: "滞空时间：{duration}秒！"
+momentumToast: "最高速度！"
