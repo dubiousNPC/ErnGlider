@@ -115,7 +115,7 @@ local function applyGlideSpell(currentGlider)
         ignoreSpellAbsorption = true,
         ignoreReflect = true
     })
-    if vfx then
+    if vfx and camera.getMode() == camera.MODE.ThirdPerson then
         animation.addVfx(pself, vfx,
             { loop = true, boneName = glideranim[cachedCurrentGlider].bone, vfxId = "glider", useAmbientLight = false })
     end

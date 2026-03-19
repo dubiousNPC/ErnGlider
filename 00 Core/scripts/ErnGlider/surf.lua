@@ -186,16 +186,11 @@ local function getSurfWeightSpell()
 end
 
 local function applyVFX()
-    --[[if animation.hasBone(pself, shieldBone) then
+    if camera.getMode() == camera.MODE.ThirdPerson then
         local shieldModel = persist.activeShieldRecord.model
         animation.addVfx(pself, shieldModel,
             { loop = true, boneName = shieldBone, vfxId = "surf", useAmbientLight = false })
-    else
-        settings.debugPrint("can't find bone: " .. tostring(shieldBone))
-    end]]
-    local shieldModel = persist.activeShieldRecord.model
-    animation.addVfx(pself, shieldModel,
-        { loop = true, boneName = shieldBone, vfxId = "surf", useAmbientLight = false })
+    end
 end
 
 local function applySurfSpell()
@@ -272,8 +267,16 @@ local function canApply()
         settings.debugPrint("canApply surf: no shield")
         return false
     end
+    if not shield:isValid() then
+        settings.debugPrint("canApply surf: shield not valid")
+        return false
+    end
     if types.Item.itemData(shield).condition <= 0 then
         settings.debugPrint("canApply surf: shield broken")
+        return false
+    end
+    if not types.Player.hasEquipped(pself, shield) then
+        settings.debugPrint("canApply surf: shield not equipped")
         return false
     end
     if fatigueStat.current <= minFatigue then
