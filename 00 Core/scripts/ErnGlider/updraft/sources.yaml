@@ -7,6 +7,14 @@ light_torch_01:
   radius: 100
   strength: 0.2
 
+ex_nord_chimney_01:
+  radius: 200
+  strength: 0.5
+
+light_logpile10:
+  radius: 250
+  strength: 0.5
+
 # there are probably a lot more lava vents etc
 in_lava_1024_01:
   radius: 250

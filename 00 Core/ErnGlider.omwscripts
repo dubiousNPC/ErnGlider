@@ -4,3 +4,4 @@ PLAYER: scripts/ErnGlider/surf.lua
 PLAYER: scripts/ErnGlider/player.lua
 NPC,CREATURE: scripts/ErnGlider/actor.lua
 GLOBAL: scripts/ErnGlider/global.lua
+CUSTOM: scripts/ErnGlider/updraftmarker.lua

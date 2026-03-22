@@ -34,6 +34,8 @@ local up                              = util.vector3(0, 0, 1)
 
 local updraftingPlayers               = {}
 
+local updraftMarkerScript             = "scripts/ErnGlider/updraftmarker.lua"
+
 local function onDoUpdraft(data)
     if not data then
         error("onGetUpdraftStrength.data is nil")
@@ -54,6 +56,15 @@ local function onDoUpdraft(data)
                 local bottom = box.center + util.vector3(0, 0, -box.halfSize.z)
                 kdf:addKernel(obj.id, bottom, updraftDataVal.radius * obj.scale,
                     updraftDataVal.strength * obj.scale)
+                -- Attach VFX to it.
+                world.vfx.spawn("meshes/ErnGlider/updraft.nif", box.center, {
+                    scale = obj.scale,
+                    loop = true,
+                    vfxId = obj.id .. "_updraft"
+                })
+                if not obj:hasScript(updraftMarkerScript) then
+                    obj:addScript(updraftMarkerScript, {})
+                end
             end
         end
 
@@ -106,10 +117,19 @@ local function onDamageItem(data)
     types.Item.itemData(data.item).condition = types.Item.itemData(data.item).condition - data.amount
 end
 
+local function onUpdraftMarkerInactive(data)
+    -- if an updraft object disappears, invalidate the cache for the cell.
+    fieldsByCell[data.self.cell.id] = nil
+    -- also delete the global vfx for it.
+    data.self:removeScript(updraftMarkerScript)
+    world.vfx.remove(data.self.id .. "_updraft")
+end
+
 return {
     eventHandlers = {
         [MOD_NAME .. 'onHitByGlider'] = onHitByGlider,
         [MOD_NAME .. 'onDamageItem'] = onDamageItem,
         [MOD_NAME .. 'onDoUpdraft'] = onDoUpdraft,
+        [MOD_NAME .. 'onUpdraftMarkerInactive'] = onUpdraftMarkerInactive,
     }
 }
