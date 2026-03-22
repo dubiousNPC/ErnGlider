@@ -56,23 +56,27 @@ local function onDoUpdraft(data)
                 local bottom = box.center + util.vector3(0, 0, -box.halfSize.z)
                 kdf:addKernel(obj.id, bottom, updraftDataVal.radius * obj.scale,
                     updraftDataVal.strength * obj.scale)
-                -- Attach VFX to it.
-                world.vfx.spawn("meshes/ErnGlider/updraft.nif", box.center, {
-                    scale = obj.scale,
-                    loop = true,
-                    vfxId = obj.id .. "_updraft"
-                })
-                if not obj:hasScript(updraftMarkerScript) then
-                    obj:addScript(updraftMarkerScript, {})
-                end
+                return true
             end
+            return false
         end
 
         for _, staticObj in ipairs(data.player.cell:getAll(types.Static)) do
             check(staticObj)
         end
         for _, activObj in ipairs(data.player.cell:getAll(types.Activator)) do
-            check(activObj)
+            if check(activObj) then
+                -- Attach VFX to it.
+                -- We are not allowed to attach scripts to statics in 0.51
+                world.vfx.spawn("meshes/ErnGlider/updraft.nif", activObj:getBoundingBox().center, {
+                    scale = activObj.scale,
+                    loop = true,
+                    vfxId = activObj.id .. "_updraft"
+                })
+                if not activObj:hasScript(updraftMarkerScript) then
+                    activObj:addScript(updraftMarkerScript, {})
+                end
+            end
         end
         fieldsByCell[data.player.cell.id] = kdf
         --print(aux_util.deepToString(kdf, 3))

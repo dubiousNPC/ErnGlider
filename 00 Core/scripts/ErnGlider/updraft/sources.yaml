@@ -11,6 +11,10 @@ ex_nord_chimney_01:
   radius: 200
   strength: 0.5
 
+ex_common_chimney_tall:
+  radius: 200
+  strength: 0.5
+
 light_logpile10:
   radius: 250
   strength: 0.5
