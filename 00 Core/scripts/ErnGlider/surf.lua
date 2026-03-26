@@ -51,12 +51,16 @@ local driftFactor            = 1.1
 local driftDecay             = 0.7
 -- clamp drift to this magnitude
 local maxDrift               = 0.8
+-- penalize momentum by this factor if drifting
+local driftPenalty           = 0.005
 -- if momentum drops below this, we quit surfing
 local kickoutMinimumMomentum = 0.15
 -- prevent surfing when fatigue is at this level.
 local minFatigue             = 1
 -- influence which drops don't cause damage
 local safeDropHeightFactor   = 13
+-- how much Speed and Athletics contributes to surfing speed.
+local statSpeedContribution  = 0.2
 
 local pointsPerSlideSecond   = 2
 local pointsPerJump          = 1
@@ -75,6 +79,7 @@ local persist                = {
         weight = 0,
         model = "",
         health = 0,
+        weightFactor = 0.5,
     },
     landed = false,
     lastFootPos = nil,
@@ -96,23 +101,6 @@ local blurShader             = blur.NewBlurShader()
 
 local fatigueStat            = pself.type.stats.dynamic.fatigue(pself)
 local surfSpell              = "eg_surf_1"
-local surfShieldWeightSpells = {
-    light = {
-        id = "eg_surf_light",
-        effects = { 0 },
-        ignoreResistances = true,
-        ignoreSpellAbsorption = true,
-        ignoreReflect = true
-    },
-    medium = {
-        id = "eg_surf_medium",
-        effects = { 0 },
-        ignoreResistances = true,
-        ignoreSpellAbsorption = true,
-        ignoreReflect = true
-    },
-    -- heavy = nil
-}
 
 local function getSoundFilePath(file)
     return "sound\\" .. MOD_NAME .. "\\" .. file
@@ -160,6 +148,7 @@ local function getShield()
         local record = types.Armor.records[leftHand.recordId]
         persist.activeShieldRecord = {
             weight = record.weight,
+            weightFactor = util.clamp(util.remap(record.weight, 5, 50, 0, 1), 0, 1),
             model = record.model,
             health = record.health,
         }
@@ -168,18 +157,6 @@ local function getShield()
     persist.activeShield = nil
     persist.activeShieldRecord = nil
     return nil
-end
-
-local function getSurfWeightSpell()
-    local weight = persist.activeShieldRecord.weight
-    -- light is 4-9, medium is 10-13, heavy is 14-45
-    if weight < 10 then
-        return surfShieldWeightSpells.light
-    elseif weight < 14 then
-        return surfShieldWeightSpells.medium
-    else
-        return surfShieldWeightSpells.heavy
-    end
 end
 
 local function applyVFX()
@@ -198,10 +175,6 @@ local function applySurfSpell()
         ignoreSpellAbsorption = true,
         ignoreReflect = true
     })
-    local weightSpecificSpell = getSurfWeightSpell()
-    if weightSpecificSpell then
-        pself.type.activeSpells(pself):add(weightSpecificSpell)
-    end
 end
 
 local forward = util.vector3(0.0, 1.0, 0.0)
@@ -301,8 +274,6 @@ local currentSpeed = ringbuffer.new(20)
 local function removeSpells()
     local spellsToRemove = {
         [surfSpell] = true,
-        [surfShieldWeightSpells.light.id] = true,
-        [surfShieldWeightSpells.medium.id] = true,
     }
     for _, spell in pairs(pself.type.activeSpells(pself)) do
         if spellsToRemove[spell.id] then
@@ -463,6 +434,14 @@ local function slideSound()
     end
 end
 
+local speedStat = pself.type.stats.attributes.speed(pself)
+local athleticsSkill = pself.type.stats.skills.athletics(pself)
+local function surfSpeed()
+    -- heavier shields have a faster top speed
+    return util.remap(util.clamp(speedStat.modified, 0, 100) * util.clamp(athleticsSkill.modified, 0, 100), 0, 100 * 100,
+        1 - statSpeedContribution, 1 + statSpeedContribution) + persist.activeShieldRecord.weightFactor * .1
+end
+
 local armsAnimationOptions = {
     priority = animation.PRIORITY.Storm,
     blendMask = util.bitOr(animation.BLEND_MASK.LeftArm, animation.BLEND_MASK.RightArm),
@@ -520,7 +499,10 @@ local function animate()
         settings.debugPrint("anim start forward - " .. surfAnimations.forward)
         --animation.clearAnimationQueue(pself, false)
         --animation.playQueued(pself, surfAnimations.forward)
-        animation.playBlended(pself, surfAnimations.forward, fullAnimationOptions)
+        fullAnimationOptions.speed = surfSpeed()
+        animation.playBlended(pself,
+            surfAnimations.forward,
+            fullAnimationOptions)
     end
     applyVFX()
 end
@@ -596,9 +578,9 @@ local function onUpdate(dt)
             local rawDropHeight = persist.maxHeightOnCurrentJump - persist.currentFootPos.z
             local dropHeight = rawDropHeight / pself:getBoundingBox().halfSize.z
             local acrobatics = pself.type.stats.skills.acrobatics(pself).modified
-            local weight = persist.activeShieldRecord.weight
+            -- heavy shields have a shorter safe height
             local safeHeight = 1 + safeDropHeightFactor * util.clamp(util.remap(acrobatics, 0, 100, 0.5, 1) *
-                (1 - (weight / 50)), 0.5, 1)
+                (1 - persist.activeShieldRecord.weightFactor / 2), 0.5, 1)
             local toastColor = "positive"
             if dropHeight > 0 and dropHeight > safeHeight then
                 -- damage is percentage based
@@ -746,13 +728,15 @@ end
 
 local function slopeMomentumFactor(slope)
     slope = util.clamp(slope, -1, 1)
+    -- heavy shields speed up and slow down slower.
     if slope > 0 then
-        local weight = persist.activeShieldRecord.weight
         -- sine ease-in when going uphill
-        return slopeUpMomentumRatio * sineEaseIn(slope) * util.clamp((1 - (weight / 100)), 0.5, 1)
+        return slopeUpMomentumRatio * sineEaseIn(slope) *
+            util.clamp((1 - persist.activeShieldRecord.weightFactor / 2), 0.5, 1)
     else
         -- quadratic ease-out when going downhill
-        return slopeDownMomentumRatio * quadraticEaseOut(slope)
+        return slopeDownMomentumRatio * quadraticEaseOut(slope) *
+            util.clamp((1 - persist.activeShieldRecord.weightFactor / 4), 0.75, 1)
     end
 end
 
@@ -797,6 +781,13 @@ local function onFrame(dt)
             end
         end
         persist.driftMomentum = util.clamp(persist.driftMomentum, -maxDrift, maxDrift)
+
+        -- penalize momentum if drifting
+        -- lighter shields are penalized less
+        persist.momentum = util.clamp(
+            persist.momentum -
+            math.abs(persist.driftMomentum) * util.clamp((1 - persist.activeShieldRecord.weightFactor / 2), 0.5, 1) *
+            driftPenalty, 0, 1)
 
         persist.sideMovement = persist.driftMomentum
         --settings.debugPrint("sidemovement: " .. tostring(persist.sideMovement))

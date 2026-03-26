@@ -47,8 +47,11 @@ Masterwork glider: `setJournalIndex eg_glider 31`
 
 ## Shield Surfing
 
-While in an unreadied stance (your weapon is sheathed and you don't have your spellcasting hands out), do a double jump while holding backward. Shield surfing damages your shield, but you move faster while heading down-slope. Tap your jump button again to put your shield away.
+While in an unreadied stance (your weapon is sheathed and you don't have your spellcasting hands out), do a double jump while holding backward. Shield surfing damages your shield, but you move faster while heading down-slope. Double-tap your jump button again to put your shield away.
 
+Lighter shields take less damage from falls, and accelerate and de-accelerate faster.
+Heavier shields have a faster top speed.
+Speed and Athletics contribute to your overall surfing speed.
 
 ## Credits
 
