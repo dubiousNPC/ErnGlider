@@ -61,13 +61,13 @@ local function onDoUpdraft(data)
             return false
         end
 
-        for _, staticObj in ipairs(data.player.cell:getAll(types.Static)) do
+        -- We are not allowed to attach scripts to statics in 0.51
+        --[[for _, staticObj in ipairs(data.player.cell:getAll(types.Static)) do
             check(staticObj)
-        end
+        end]] --
         for _, activObj in ipairs(data.player.cell:getAll(types.Activator)) do
             if check(activObj) then
                 -- Attach VFX to it.
-                -- We are not allowed to attach scripts to statics in 0.51
                 world.vfx.spawn("meshes/ErnGlider/updraft.nif", activObj:getBoundingBox().center, {
                     scale = activObj.scale,
                     loop = true,
@@ -79,7 +79,6 @@ local function onDoUpdraft(data)
             end
         end
         fieldsByCell[data.player.cell.id] = kdf
-        --print(aux_util.deepToString(kdf, 3))
     end
 
     -- return val
