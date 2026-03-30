@@ -4,7 +4,7 @@ return {
         right = "GliderR",
         left = "GliderL",
         bone = "Bip01 Glider",
-        model = "Meshes\\ErnGlider\\RacerGlider204.nif"
+        model = "Meshes\\ErnGlider\\RacerGlider101.nif"
     },
     advanced = {
         forward = "GliderIdle",
@@ -18,6 +18,6 @@ return {
         right = "GliderR",
         left = "GliderL",
         bone = "Bip01 Glider",
-        model = "Meshes\\ErnGlider\\RacerGlider204.nif"
+        model = "Meshes\\ErnGlider\\RacerGlider301.nif"
     },
 }
