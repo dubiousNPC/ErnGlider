@@ -255,9 +255,9 @@ local function removeGlider()
     settings.debugPrint(aux_util.deepToString(allGliderAnimations, 3))
     for animName, present in pairs(allGliderAnimations) do
         if present then
-            -- TODO: these cancels are not working
             --settings.debugPrint("cancel " .. animName)
             animation.cancel(pself, animName)
+            animation.cancel(pself, animName:lower())
         end
     end
 
@@ -314,8 +314,9 @@ local glideAnimOptions = {
 
 local function playGliderAnim(newAnim)
     if not animation.isPlaying(pself, newAnim) then
+        interfaces.AnimationController.playBlendedAnimation(newAnim, glideAnimOptions)
         --settings.debugPrint("anim start - " .. newAnim)
-        animation.playBlended(pself, newAnim, glideAnimOptions)
+        --animation.playBlended(pself, newAnim, glideAnimOptions)
     end
 end
 
