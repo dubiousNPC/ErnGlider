@@ -402,14 +402,8 @@ local function applySurf()
     end
 
 
-    -- TODO: make more gates
-    local firstGate = chimgates.nextGatePosition()
-    if firstGate then
-        settings.debugPrint("located first CHIM gate")
-    else
-        settings.debugPrint("failed to locate first CHIM gate")
-    end
-    persist.gatePositions = { firstGate }
+    -- make more gates
+    persist.gatePositions = chimgates.getAllGatePositions()
     spawnCHIMGates()
 
     -- todo: unequip then re-equip shield?

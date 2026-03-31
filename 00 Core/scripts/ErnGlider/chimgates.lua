@@ -23,7 +23,8 @@ local nearby       = require('openmw.nearby')
 local util         = require('openmw.util')
 local settings     = require("scripts.ErnGlider.settings")
 
-local gateDistance = 1000
+local CELL_SIZE    = 64 * 128 -- 8192
+local gateDistance = CELL_SIZE / 4
 
 local function getFootPos()
     local box = pself:getBoundingBox()
@@ -32,10 +33,9 @@ end
 
 local up = util.vector3(0.0, 0.0, 1.0)
 
-local function deriveExactGatePosition(position)
+local function deriveExactGatePosition(position, lastPosition)
     local validPos = nil
     local attempt = 1
-    local footPos = getFootPos()
     local hit = nearby.castRay(position + up * 1000, position + up * -5000, {
         collisionType = nearby.COLLISION_TYPE.HeightMap,
         radius = 10,
@@ -49,9 +49,7 @@ local function deriveExactGatePosition(position)
             includeFlags = nearby.NAVIGATOR_FLAGS.Walk,
         })
         if walkPos then
-            local height = walkPos.z
-            settings.debugPrint("testing chim gate at height " .. tostring(height))
-            if height and (height < footPos.z) then
+            if walkPos.z < lastPosition.z then
                 validPos = walkPos
                 break
             end
@@ -70,15 +68,29 @@ end
 local forward = util.vector3(0.0, 1.0, 0.0)
 local function nextGatePosition(lastPosition)
     local facing = pself.rotation:apply(forward):normalize()
-    if not lastPosition then
-        return deriveExactGatePosition(pself.position + facing * gateDistance)
-    end
+    return deriveExactGatePosition(lastPosition + facing * gateDistance, lastPosition)
+end
 
-    local initialPos = lastPosition + facing *
-        math.random(math.floor(0.75 * gateDistance), math.ceil(1.25 * gateDistance))
-    return deriveExactGatePosition(initialPos)
+local function getAllGatePositions()
+    local positions = { nextGatePosition(getFootPos()) }
+    for _, _ in pairs({ 2, 3, 4 }) do
+        local lastPos = positions[#positions]
+        if lastPos then
+            local newPos = nextGatePosition(lastPos)
+            if newPos then
+                settings.debugPrint("found valid chim gate position")
+                table.insert(positions, newPos)
+            else
+                break
+            end
+        else
+            break
+        end
+    end
+    return positions
 end
 
 return {
-    nextGatePosition = nextGatePosition
+    nextGatePosition = nextGatePosition,
+    getAllGatePositions = getAllGatePositions,
 }
