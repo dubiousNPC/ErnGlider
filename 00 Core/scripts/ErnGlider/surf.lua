@@ -404,6 +404,7 @@ local function applySurf()
 
     -- make more gates
     persist.gatePositions = chimgates.getAllGatePositions()
+    settings.debugPrint("Spawned " .. tostring(#persist.gatePositions) .. " CHIM gates.")
     spawnCHIMGates()
 
     -- todo: unequip then re-equip shield?

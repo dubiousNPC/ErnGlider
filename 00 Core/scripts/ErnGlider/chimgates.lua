@@ -24,7 +24,7 @@ local util         = require('openmw.util')
 local settings     = require("scripts.ErnGlider.settings")
 
 local CELL_SIZE    = 64 * 128 -- 8192
-local gateDistance = CELL_SIZE / 4
+local gateDistance = CELL_SIZE / 5
 
 local function getFootPos()
     local box = pself:getBoundingBox()
@@ -66,17 +66,23 @@ local function deriveExactGatePosition(position, lastPosition)
 end
 
 local forward = util.vector3(0.0, 1.0, 0.0)
-local function nextGatePosition(lastPosition)
-    local facing = pself.rotation:apply(forward):normalize()
+local function nextGatePosition(lastPosition, facing)
     return deriveExactGatePosition(lastPosition + facing * gateDistance, lastPosition)
 end
 
 local function getAllGatePositions()
-    local positions = { nextGatePosition(getFootPos()) }
+    local facing = pself.rotation:apply(forward):normalize()
+    local firstPos = nextGatePosition(getFootPos(), facing)
+    if not firstPos then
+        return {}
+    end
+    local positions = { firstPos }
     for _, _ in pairs({ 2, 3, 4 }) do
         local lastPos = positions[#positions]
-        if lastPos then
-            local newPos = nextGatePosition(lastPos)
+        local lastlastPos = positions[#positions - 1] or pself.position
+        if lastPos and lastlastPos then
+            local roughDirection = ((lastlastPos - lastPos):normalize() + facing):normalize()
+            local newPos = nextGatePosition(lastPos, roughDirection)
             if newPos then
                 settings.debugPrint("found valid chim gate position")
                 table.insert(positions, newPos)
