@@ -128,11 +128,61 @@ local function onUpdraftMarkerInactive(data)
     world.vfx.remove(data.self.id .. "_updraft")
 end
 
+local gateIndexToMesh = {
+    "Meshes\\ErnGlider\\dbs_chim_1_c.nif",
+    "Meshes\\ErnGlider\\dbs_chim_2_h.nif",
+    "Meshes\\ErnGlider\\dbs_chim_3_i.nif",
+    "Meshes\\ErnGlider\\dbs_chim_4_m.nif",
+}
+local chimGateVFXsByPlayer = {}
+local function spawnCHIMGates(data)
+    if not data.player then
+        error("no player in data")
+    end
+    if not data.positions then
+        error("no positions in data")
+    end
+
+    if not chimGateVFXsByPlayer[data.player.id] then
+        chimGateVFXsByPlayer[data.player.id] = {}
+    end
+
+    for idx, gatePos in ipairs(data.positions) do
+        local vfxID = tostring(data.player.id) .. "_chimgate_" .. tostring(idx)
+        chimGateVFXsByPlayer[data.player.id][vfxID] = true
+        world.vfx.spawn(gateIndexToMesh[idx], gatePos, {
+            scale = 1,
+            loop = true,
+            vfxId = vfxID
+        })
+    end
+end
+
+local function onSurfStart(data)
+    if data.positions then
+        spawnCHIMGates(data)
+    end
+end
+
+local function onSurfEnd(data)
+    if not chimGateVFXsByPlayer[data.player.id] then
+        chimGateVFXsByPlayer[data.player.id] = {}
+    end
+    for id, present in pairs(chimGateVFXsByPlayer[data.player.id]) do
+        if present then
+            world.vfx.remove(id)
+        end
+    end
+    chimGateVFXsByPlayer[data.player.id] = {}
+end
+
 return {
     eventHandlers = {
         [MOD_NAME .. 'onHitByGlider'] = onHitByGlider,
         [MOD_NAME .. 'onDamageItem'] = onDamageItem,
         [MOD_NAME .. 'onDoUpdraft'] = onDoUpdraft,
         [MOD_NAME .. 'onUpdraftMarkerInactive'] = onUpdraftMarkerInactive,
+        [MOD_NAME .. 'onSurfStart'] = onSurfStart,
+        [MOD_NAME .. 'onSurfEnd'] = onSurfEnd,
     }
 }
