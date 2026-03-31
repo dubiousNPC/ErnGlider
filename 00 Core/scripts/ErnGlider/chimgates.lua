@@ -16,31 +16,43 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]
 
-local MOD_NAME = require("scripts.ErnGlider.ns")
-local pself = require("openmw.self")
-local core = require('openmw.core')
-local nearby = require('openmw.nearby')
-local util = require('openmw.util')
+local MOD_NAME     = require("scripts.ErnGlider.ns")
+local pself        = require("openmw.self")
+local core         = require('openmw.core')
+local nearby       = require('openmw.nearby')
+local util         = require('openmw.util')
+local settings     = require("scripts.ErnGlider.settings")
 
-local gateDistance = 2000
+local gateDistance = 1000
 
 local function getFootPos()
     local box = pself:getBoundingBox()
     return box.center + util.vector3(0, 0, -box.halfSize.z)
 end
 
+local up = util.vector3(0.0, 0.0, 1.0)
+
 local function deriveExactGatePosition(position)
     local validPos = nil
     local attempt = 1
     local footPos = getFootPos()
+    local hit = nearby.castRay(position + up * 1000, position + up * -5000, {
+        collisionType = nearby.COLLISION_TYPE.HeightMap,
+        radius = 10,
+    })
+    if not hit.hitPos then
+        settings.debugPrint("no ground at gate position")
+        return
+    end
     while true do
-        local walkPos = nearby.findRandomPointAroundCircle(position, 500 + attempt * 100, {
+        local walkPos = nearby.findRandomPointAroundCircle(hit.hitPos, gateDistance / 3, {
             includeFlags = nearby.NAVIGATOR_FLAGS.Walk,
         })
         if walkPos then
-            local height = core.land.getHeightAt(walkPos, pself)
-            if height < footPos then
-                validPos = footPos
+            local height = walkPos.z
+            settings.debugPrint("testing chim gate at height " .. tostring(height))
+            if height and (height < footPos.z) then
+                validPos = walkPos
                 break
             end
         end
@@ -56,22 +68,17 @@ local function deriveExactGatePosition(position)
 end
 
 local forward = util.vector3(0.0, 1.0, 0.0)
-local function gatePositions()
+local function nextGatePosition(lastPosition)
     local facing = pself.rotation:apply(forward):normalize()
-    local firstGate = deriveExactGatePosition(pself.position + facing * gateDistance)
-    local positions = {}
-    table.insert(positions, firstGate)
-    while #positions < 4 do
-        local nextGate = deriveExactGatePosition(positions[#positions] + facing *
-            math.random(math.floor(0.75 * gateDistance), math.ceil(1.25 * gateDistance)))
-        if not nextGate then
-            break
-        end
-        table.insert(positions, nextGate)
+    if not lastPosition then
+        return deriveExactGatePosition(pself.position + facing * gateDistance)
     end
-    return positions
+
+    local initialPos = lastPosition + facing *
+        math.random(math.floor(0.75 * gateDistance), math.ceil(1.25 * gateDistance))
+    return deriveExactGatePosition(initialPos)
 end
 
 return {
-    gatePositions = gatePositions
+    nextGatePosition = nextGatePosition
 }

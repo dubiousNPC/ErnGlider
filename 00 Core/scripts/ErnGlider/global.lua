@@ -148,13 +148,15 @@ local function spawnCHIMGates(data)
     end
 
     for idx, gatePos in ipairs(data.positions) do
-        local vfxID = tostring(data.player.id) .. "_chimgate_" .. tostring(idx)
-        chimGateVFXsByPlayer[data.player.id][vfxID] = true
-        world.vfx.spawn(gateIndexToMesh[idx], gatePos, {
-            scale = 1,
-            loop = true,
-            vfxId = vfxID
-        })
+        if data.positions then
+            local vfxID = tostring(data.player.id) .. "_chimgate_" .. tostring(idx)
+            chimGateVFXsByPlayer[data.player.id][vfxID] = true
+            world.vfx.spawn(gateIndexToMesh[idx], gatePos, {
+                scale = 1,
+                loop = true,
+                vfxId = vfxID
+            })
+        end
     end
 end
 

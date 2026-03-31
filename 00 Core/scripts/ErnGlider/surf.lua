@@ -34,6 +34,7 @@ local chimtricky             = require("scripts.ErnGlider.ui.chimtricky")
 local toasts                 = require("scripts.ErnGlider.ui.toasts")
 local settings               = require("scripts.ErnGlider.settings")
 local blur                   = require("scripts.ErnGlider.blurshader")
+local chimgates              = require("scripts.ErnGlider.chimgates")
 
 -- initial momentum when starting surf
 local startMomentum          = 0.2
@@ -95,6 +96,7 @@ local persist                = {
         jumps = 0,
         maxSpeed = 0,
     },
+    gatePositions = {},
 }
 
 local blurShader             = blur.NewBlurShader()
@@ -191,6 +193,15 @@ local function touchingWall()
     return castResult
 end
 
+local function spawnCHIMGates()
+    if persist.applied and settings.surf.chimTricky then
+        core.sendGlobalEvent(MOD_NAME .. 'onSurfStart', {
+            player = pself.object,
+            positions = persist.gatePositions,
+        })
+    end
+end
+
 local function onInit(initData)
     if initData ~= nil then
         persist = initData
@@ -209,6 +220,10 @@ local function onLoad(data)
     if persist.airTimeDurationOnCurrentJump == nil then
         persist.airTimeDurationOnCurrentJump = 0
     end
+    if persist.gatePositions == nil then
+        persist.gatePositions = {}
+    end
+    spawnCHIMGates()
 end
 local function onSave()
     return persist
@@ -330,6 +345,10 @@ local function removeSurf(wipeout)
     calcPoints(wipeout)
 
     chimtricky.display(nil)
+
+    core.sendGlobalEvent(MOD_NAME .. 'onSurfEnd', {
+        player = pself.object,
+    })
 end
 
 local function getFootPos()
@@ -381,6 +400,17 @@ local function applySurf()
     if camera.getMode() ~= camera.MODE.Static then
         blurShader:setEnabled(true)
     end
+
+
+    -- TODO: make more gates
+    local firstGate = chimgates.nextGatePosition()
+    if firstGate then
+        settings.debugPrint("located first CHIM gate")
+    else
+        settings.debugPrint("failed to locate first CHIM gate")
+    end
+    persist.gatePositions = { firstGate }
+    spawnCHIMGates()
 
     -- todo: unequip then re-equip shield?
     -- maybe just override the shield vfx for sheath mod somehow?
