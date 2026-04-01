@@ -36,6 +36,8 @@ local settings               = require("scripts.ErnGlider.settings")
 local blur                   = require("scripts.ErnGlider.blurshader")
 local chimgates              = require("scripts.ErnGlider.chimgates")
 
+-- multiply finished speed by this amount
+local speedFactor            = 0.7
 -- initial momentum when starting surf
 local startMomentum          = 0.2
 -- downward slope bonus factor
@@ -463,8 +465,9 @@ local speedStat = pself.type.stats.attributes.speed(pself)
 local athleticsSkill = pself.type.stats.skills.athletics(pself)
 local function surfSpeed()
     -- heavier shields have a faster top speed
-    return util.remap(util.clamp(speedStat.modified, 0, 100) * util.clamp(athleticsSkill.modified, 0, 100), 0, 100 * 100,
-        1 - statSpeedContribution, 1 + statSpeedContribution) + persist.activeShieldRecord.weightFactor * .1
+    return speedFactor *
+        (util.remap(util.clamp(speedStat.modified, 0, 100) * util.clamp(athleticsSkill.modified, 0, 100), 0, 100 * 100,
+            1 - statSpeedContribution, 1 + statSpeedContribution) + persist.activeShieldRecord.weightFactor * .1)
 end
 
 local armsAnimationOptions = {
@@ -519,8 +522,7 @@ local function animate()
     end
 
     -- always play forward
-    local legAnim = animation.getActiveGroup(pself, animation.BONE_GROUP.LowerBody)
-    if legAnim ~= surfAnimations.forward then
+    if not animation.isPlaying(pself, surfAnimations.forward) then
         settings.debugPrint("anim start forward - " .. surfAnimations.forward)
         --animation.clearAnimationQueue(pself, false)
         --animation.playQueued(pself, surfAnimations.forward)
