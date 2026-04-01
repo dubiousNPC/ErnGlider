@@ -37,6 +37,7 @@ local updraftingPlayers               = {}
 local updraftMarkerScript             = "scripts/ErnGlider/updraftmarker.lua"
 
 local function onDoUpdraft(data)
+    --print("onDoUpdraft(" .. aux_util.deepToString(data) .. ")")
     if not data then
         error("onGetUpdraftStrength.data is nil")
     end
@@ -67,6 +68,7 @@ local function onDoUpdraft(data)
         end]] --
         for _, activObj in ipairs(data.player.cell:getAll(types.Activator)) do
             if check(activObj) then
+                print("applying updraft")
                 -- Attach VFX to it.
                 world.vfx.spawn("meshes/ErnGlider/updraft.nif", activObj:getBoundingBox().center, {
                     scale = activObj.scale,

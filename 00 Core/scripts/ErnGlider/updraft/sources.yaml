@@ -2,13 +2,9 @@
 # All yaml files in this directory will be merged together, so you can
 # add new files in a patch mod and they will be included automatically.
 # The record ids should all be lowercased in these files.
-# Updrafts will only be applied to Activators, not Statics.
+# Updrafts are only applied to Activators, not Statics.
 
 ex_nord_chimney_01:
-  radius: 200
-  strength: 0.5
-
-ex_common_chimney_tall:
   radius: 200
   strength: 0.5
 
@@ -31,6 +27,10 @@ act_terrain_lava_vent:
 ab_fx_lava1024:
   radius: 250
   strength: 1
+
+terrain_ashmire_02:
+  radius: 250
+  strength: 0.5
 
 ab_fx_lava256rnd:
   radius: 250
