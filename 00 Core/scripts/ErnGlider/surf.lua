@@ -663,14 +663,18 @@ local function onUpdate(dt)
 
         local facingVec3 = pself.rotation:apply(forward):normalize()
         local facingVec2 = util.vector2(facingVec3.x, facingVec3.y)
-        local travelDot = facingVec2:dot(footTravelVec:normalize())
+        local travelDot = 0
+        local xyDist = footTravelVec:length()
+        if xyDist > 0 then
+            travelDot = facingVec2:dot(footTravelVec:normalize())
+        end
         --[[print("facing (" .. string.format("%.2f", facingVec2.x) .. ", " .. string.format("%.2f", facingVec2.y) .. ")" ..
             "foot (" ..
             string.format("%.2f", footTravelVec.x) .. ", " .. string.format("%.2f", footTravelVec.y) .. ")" ..
             "dot (" .. string.format("%.2f", travelDot) .. ")")]]
-        local xyDist = footTravelVec:length()
 
-        if travelDot < 0 and types.Actor.isOnGround(pself) then
+
+        if (travelDot < 0 and types.Actor.isOnGround(pself)) or xyDist == 0 then
             -- we are moving backwards!
             -- keep slope neutral since we might be bouncing against a wall.
             -- friction or min speed kickout will eventually exit surf
