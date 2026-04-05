@@ -39,13 +39,13 @@ local chimgates              = require("scripts.ErnGlider.chimgates")
 -- initial momentum when starting surf
 local startMomentum          = 0.2
 -- downward slope bonus factor
-local slopeDownMomentumRatio = 0.2
+local slopeDownMomentumRatio = 0.5
 -- upward slope penalty factor
 local slopeUpMomentumRatio   = 0.6
 -- friction per second to decay momentum by
-local friction               = 0.015 * 60
+local friction               = 0.05
 -- radian threshold per second to start drifting
-local driftTurnThreshold     = 0.005 * 60
+local driftTurnThreshold     = 0.3
 -- how much yaw change contributes to side movement drift
 local driftFactor            = 1.1
 -- decay drift momentum by this amount per second
@@ -761,7 +761,7 @@ local function onFrame(dt)
     if persist.applied then
         -- only adjust momenum while on ground
         if persist.landed then
-            persist.momentum = util.clamp(persist.momentum - (friction * dt + slopeMomentumFactor(persist.slope)) * dt,
+            persist.momentum = util.clamp(persist.momentum - (friction + slopeMomentumFactor(persist.slope)) * dt,
                 0,
                 1)
             if persist.momentum > 1.5 * kickoutMinimumMomentum then
