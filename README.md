@@ -8,13 +8,13 @@ Add `00 Core` and one of `01 DwemerGlider` or `01 RacerGlider` to your data path
 
 Add both `ErnGlider.omwaddon` and `ErnGlider.omwscripts`!
 
-In your settings, enable these:
+In your settings.cfg, **enable** these:
 
 - [use-additional-anim-sources](https://openmw.readthedocs.io/en/stable/reference/modding/settings/game.html#use-additional-anim-sources)
 - [smooth-animation-transitions](https://openmw.readthedocs.io/en/stable/reference/modding/settings/game.html#smooth-animation-transitions)
 - [player-movement-ignores-animation](https://openmw.readthedocs.io/en/stable/reference/modding/settings/game.html#player-movement-ignores-animation)
 
-Consider turning this off:
+Consider turning this off so you don't see two shields while surfing:
 - [shield sheathing](https://openmw.readthedocs.io/en/stable/reference/modding/settings/game.html#shield-sheathing)
 
 ## Using Your Glider
@@ -85,12 +85,3 @@ Erin coded this, but this wouldn't have been possible without the help of a lot 
 
 - openmw-animated-levitation -- https://gitlab.com/fallchildren/openmw-animated-levitation -- License: GPL
 - PCP-OpenMW by Qlonever -- https://github.com/Qlonever/PCP-OpenMW) -- License: MIT
-
-
-## TODO
-
-- Meshes
-- Gliding animation.
-- Extra boost when over lava?
-- shield surf animation
-- un-equip shield while surfing and then re-equip?
