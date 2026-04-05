@@ -36,8 +36,6 @@ local settings               = require("scripts.ErnGlider.settings")
 local blur                   = require("scripts.ErnGlider.blurshader")
 local chimgates              = require("scripts.ErnGlider.chimgates")
 
--- multiply finished speed by this amount
-local speedFactor            = 0.7
 -- initial momentum when starting surf
 local startMomentum          = 0.2
 -- downward slope bonus factor
@@ -62,8 +60,6 @@ local kickoutMinimumMomentum = 0.15
 local minFatigue             = 1
 -- influence which drops don't cause damage
 local safeDropHeightFactor   = 13
--- how much Speed and Athletics contributes to surfing speed.
-local statSpeedContribution  = 0.2
 
 local pointsPerSlideSecond   = 2
 local pointsPerJump          = 1
@@ -461,15 +457,6 @@ local function slideSound()
     end
 end
 
-local speedStat = pself.type.stats.attributes.speed(pself)
-local athleticsSkill = pself.type.stats.skills.athletics(pself)
-local function surfSpeed()
-    -- heavier shields have a faster top speed
-    return speedFactor *
-        (util.remap(util.clamp(speedStat.modified, 0, 100) * util.clamp(athleticsSkill.modified, 0, 100), 0, 100 * 100,
-            1 - statSpeedContribution, 1 + statSpeedContribution) + persist.activeShieldRecord.weightFactor * .1)
-end
-
 local armsAnimationOptions = {
     priority = animation.PRIORITY.Storm,
     blendMask = util.bitOr(animation.BLEND_MASK.LeftArm, animation.BLEND_MASK.RightArm),
@@ -526,7 +513,6 @@ local function animate()
         settings.debugPrint("anim start forward - " .. surfAnimations.forward)
         --animation.clearAnimationQueue(pself, false)
         --animation.playQueued(pself, surfAnimations.forward)
-        fullAnimationOptions.speed = surfSpeed()
         animation.playBlended(pself,
             surfAnimations.forward,
             fullAnimationOptions)
@@ -821,9 +807,13 @@ local function onFrame(dt)
             driftPenalty, 0, 1)
 
         persist.sideMovement = persist.driftMomentum
+
+        local maxSpeedMod = util.remap(persist.activeShieldRecord.weightFactor, 0, 1, 0.92, 1)
+
         --settings.debugPrint("sidemovement: " .. tostring(persist.sideMovement))
-        pself.controls.sideMovement = persist.sideMovement
-        pself.controls.movement = util.clamp(persist.momentum - math.abs(persist.sideMovement), 0, 1)
+        pself.controls.sideMovement = persist.sideMovement * maxSpeedMod
+        pself.controls.movement = util.clamp(
+            persist.momentum - math.abs(persist.sideMovement), 0, 1) * maxSpeedMod
         pself.controls.run = true
     end
 end

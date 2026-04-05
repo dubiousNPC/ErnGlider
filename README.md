@@ -12,8 +12,6 @@ In your settings, enable these:
 
 - [use-additional-anim-sources](https://openmw.readthedocs.io/en/stable/reference/modding/settings/game.html#use-additional-anim-sources)
 - [smooth-animation-transitions](https://openmw.readthedocs.io/en/stable/reference/modding/settings/game.html#smooth-animation-transitions)
-
-And don't enable this:
 - [player-movement-ignores-animation](https://openmw.readthedocs.io/en/stable/reference/modding/settings/game.html#player-movement-ignores-animation)
 
 Consider turning this off:
