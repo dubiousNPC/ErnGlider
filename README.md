@@ -4,7 +4,10 @@ OpenMW mod that adds a glider when you double-jump outside.
 
 ## Installing
 
-Add `00 Core` and one of `01 DwemerGlider` or `01 RacerGlider` to your data paths.
+Add `00 Core` and one of these to your data paths:
+- `01 Dwemer Glider`
+- `01 Dwemer Glider Hands-Free`
+- `01 Racer Glider`
 
 Add both `ErnGlider.omwaddon` and `ErnGlider.omwscripts`!
 
