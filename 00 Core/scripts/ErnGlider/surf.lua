@@ -95,6 +95,7 @@ local persist                = {
         maxSpeed = 0,
     },
     gatePositions = {},
+    touchedGates = {}
 }
 
 local blurShader             = blur.NewBlurShader()
@@ -193,6 +194,7 @@ end
 
 local function spawnCHIMGates()
     if persist.applied and settings.surf.chimTricky then
+        persist.touchedGates = {}
         core.sendGlobalEvent(MOD_NAME .. 'onSurfStart', {
             player = pself.object,
             positions = persist.gatePositions,
@@ -219,6 +221,7 @@ local function onLoad(data)
         persist.airTimeDurationOnCurrentJump = 0
     end
     if persist.gatePositions == nil then
+        persist.touchedGates = {}
         persist.gatePositions = {}
     end
     spawnCHIMGates()
@@ -530,6 +533,18 @@ local function onJump()
     persist.points.jumps = persist.points.jumps + 1
 end
 
+local function hitGate()
+    for i, gatePos in pairs(persist.gatePositions) do
+        if not persist.touchedGates[i] then
+            if (pself.position - gatePos):length2() < 200 * 200 then
+                persist.touchedGates[i] = true
+                return i
+            end
+        end
+    end
+    return nil
+end
+
 local conditionDebt = 1
 local rayCastDelay = 0
 
@@ -719,6 +734,14 @@ local function onUpdate(dt)
             end
         end
 
+        -- check if we are close to CHIM gates
+        if settings.surf.chimTricky then
+            local gate = hitGate()
+            if gate then
+                settings.debugPrint("touched gate " .. tostring(gate))
+                persist.momentum = math.max(persist.momentum, startMomentum)
+            end
+        end
 
         chimtricky.display({
             dt = dt,
