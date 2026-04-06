@@ -17,9 +17,6 @@ In your settings.cfg, **enable** these:
 - [smooth-animation-transitions](https://openmw.readthedocs.io/en/stable/reference/modding/settings/game.html#smooth-animation-transitions)
 - [player-movement-ignores-animation](https://openmw.readthedocs.io/en/stable/reference/modding/settings/game.html#player-movement-ignores-animation)
 
-Consider turning this off so you don't see two shields while surfing:
-- [shield sheathing](https://openmw.readthedocs.io/en/stable/reference/modding/settings/game.html#shield-sheathing)
-
 ## Using Your Glider
 
 Gliders only work while outside. While in an unreadied stance (your weapon is sheathed and you don't have your spellcasting hands out), do a double jump while not holding forward or backward. This will activate your glider, which drains fatigue. Tap your jump button again to put the glider away.
