@@ -284,7 +284,7 @@ local function calcPoints(wipeout)
         persist.points.airPoints +
         persist.points.jumps * pointsPerJump +
         (persist.points.maxSpeed * persist.points.maxSpeed) * maxSpeedPointsModifier +
-        100 * (#persist.touchedGates) ^ 2
+        100 * ((#persist.touchedGates) ^ 2)
 
     if wipeout then
         total = total / 2
