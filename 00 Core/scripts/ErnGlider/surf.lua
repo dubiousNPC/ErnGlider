@@ -126,6 +126,13 @@ local surfAnimations = {
     jump = "sneakforward"
 }
 
+local chimGateSpells = {
+    "eg_surf_chim1",
+    "eg_surf_chim2",
+    "eg_surf_chim3",
+    "eg_surf_chim4",
+}
+
 local function cancelSurfAnimations()
     animation.cancel(pself, surfAnimations.forward)
     if surfAnimations.right then animation.cancel(pself, surfAnimations.right) end
@@ -276,7 +283,9 @@ local function calcPoints(wipeout)
     local total = persist.points.slidePoints +
         persist.points.airPoints +
         persist.points.jumps * pointsPerJump +
-        (persist.points.maxSpeed * persist.points.maxSpeed) * maxSpeedPointsModifier
+        (persist.points.maxSpeed * persist.points.maxSpeed) * maxSpeedPointsModifier +
+        100 * (#persist.touchedGates) ^ 2
+
     if wipeout then
         total = total / 2
     end
@@ -740,6 +749,16 @@ local function onUpdate(dt)
             if gate then
                 settings.debugPrint("touched gate " .. tostring(gate))
                 persist.momentum = math.max(persist.momentum, startMomentum)
+                pself.type.activeSpells(pself):add({
+                    id = chimGateSpells[gate],
+                    effects = { 0 },
+                    ignoreResistances = true,
+                    ignoreSpellAbsorption = true,
+                    ignoreReflect = true
+                })
+                local gateToast = toasts.newTextToast(localization("gate_" .. tostring(gate)),
+                    "magic")
+                table.insert(newToasts, gateToast)
             end
         end
 
