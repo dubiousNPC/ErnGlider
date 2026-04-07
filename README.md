@@ -17,6 +17,8 @@ In your settings.cfg, **enable** these:
 - [smooth-animation-transitions](https://openmw.readthedocs.io/en/stable/reference/modding/settings/game.html#smooth-animation-transitions)
 - [player-movement-ignores-animation](https://openmw.readthedocs.io/en/stable/reference/modding/settings/game.html#player-movement-ignores-animation)
 
+If you have the OpenMW Camera set to "Move 360", the glider and shield won't render.
+
 ## Using Your Glider
 
 Gliders only work while outside. While in an unreadied stance (your weapon is sheathed and you don't have your spellcasting hands out), do a double jump while not holding forward or backward. This will activate your glider, which drains fatigue. Tap your jump button again to put the glider away.
