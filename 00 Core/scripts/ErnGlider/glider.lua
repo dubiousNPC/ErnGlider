@@ -51,23 +51,39 @@ local persist            = {
     sideMovement = 0,
 }
 
-pself.type.addTopic(pself, "glider")
+if settings.glider.enableQuest then
+    pself.type.addTopic(pself, "glider")
+end
 
 local cachedCurrentGlider = "basic"
 local function getCurrentGlider()
-    local gliderQuest = pself.type.quests(pself)["eg_glider"]
-    local gliderStage = gliderQuest and gliderQuest.stage or 0
-    if gliderStage >= 31 then
-        cachedCurrentGlider = "masterwork"
-        return cachedCurrentGlider
-    elseif gliderStage >= 21 then
-        cachedCurrentGlider = "advanced"
-        return cachedCurrentGlider
-    elseif gliderStage >= 1 then
-        cachedCurrentGlider = "basic"
-        return cachedCurrentGlider
+    if settings.glider.enableQuest then
+        local gliderQuest = pself.type.quests(pself)["eg_glider"]
+        local gliderStage = gliderQuest and gliderQuest.stage or 0
+        if gliderStage >= 31 then
+            cachedCurrentGlider = "masterwork"
+            return cachedCurrentGlider
+        elseif gliderStage >= 21 then
+            cachedCurrentGlider = "advanced"
+            return cachedCurrentGlider
+        elseif gliderStage >= 1 then
+            cachedCurrentGlider = "basic"
+            return cachedCurrentGlider
+        else
+            return nil
+        end
     else
-        return nil
+        local acrobatics = pself.type.stats.skills.acrobatics(pself).base
+        if acrobatics > 80 then
+            cachedCurrentGlider = "masterwork"
+            return cachedCurrentGlider
+        elseif acrobatics > 40 then
+            cachedCurrentGlider = "advanced"
+            return cachedCurrentGlider
+        else
+            cachedCurrentGlider = "basic"
+            return cachedCurrentGlider
+        end
     end
 end
 

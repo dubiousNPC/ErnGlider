@@ -2,6 +2,8 @@
 
 OpenMW mod that adds a glider when you double-jump outside.
 
+Make sure you're playing on OpenMW 0.51+.
+
 ## Installing
 
 Add `00 Core` and one of these to your data paths:
@@ -24,6 +26,8 @@ If you have the OpenMW Camera set to "Move 360", the glider and shield won't ren
 Gliders only work while outside. While in an unreadied stance (your weapon is sheathed and you don't have your spellcasting hands out), do a double jump while not holding forward or backward. This will activate your glider, which drains fatigue. Tap your jump button again to put the glider away.
 
 ### Glider Quest Walkthrough
+
+You can disable this quest completely in the mod settings. This is helpful if you're not playing on an English version of Morrowind.
 
 1. Talk to a friendly [Acrobat](https://en.uesp.net/wiki/Category:Morrowind-Acrobat) to get a basic glider.
 2. Talk to a friendly [Savant](https://en.uesp.net/wiki/Category:Morrowind-Savant) when you have at least 40 Acrobatics to upgrade your glider.

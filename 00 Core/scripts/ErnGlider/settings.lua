@@ -97,6 +97,13 @@ local function init()
                 renderer = "checkbox",
             },
             {
+                key = "enableQuest",
+                name = "enableQuestName",
+                description = "enableQuestDescription",
+                default = true,
+                renderer = "checkbox",
+            },
+            {
                 key = "fatigueCost",
                 name = "fatigueCostName",
                 description = "fatigueCostDescription",
