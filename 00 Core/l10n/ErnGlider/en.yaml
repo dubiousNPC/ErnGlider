@@ -6,6 +6,8 @@ gliderSettings: "Gliding"
 gliderDescription: "Gracefully glide through the air by double-jumping while your hands are unreadied, and you are moving neither forward nor backward.\nGliders and glider upgrades are only available through completing a quest."
 surfSettings: "Shield Surfing"
 surfDescription: "Slip down slopes on your shield by double-jumping while your hands are unreadied, and you are moving backward."
+enableQuestName: "Enable Quest"
+enableQuestDescription: "Disable to deactivate the Glider quest. Your Glider quality will unlock based on your Acrobatics skill."
 
 enableName: "Enable"
 enableDescription: "Enable or disable this feature."

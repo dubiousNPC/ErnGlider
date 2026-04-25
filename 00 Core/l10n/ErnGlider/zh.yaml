@@ -6,6 +6,8 @@ gliderSettings: "滑翔"
 gliderDescription: "当你的双手未装备物品且既不向前也不向后移动时，通过二段跳可以在空中优雅滑翔。\n滑翔器及其升级只能通过完成任务获得。"
 surfSettings: "盾牌滑行"
 surfDescription: "当你的双手未装备物品且向后移动时，通过二段跳可以在盾牌上沿坡面滑行。"
+enableQuestName: "启用任务"
+enableQuestDescription: "关闭此项以停用滑翔器任务。你的滑翔器品质将根据你的杂技技能解锁。"
 
 enableName: "启用"
 enableDescription: "启用或禁用此功能。"

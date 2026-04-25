@@ -6,6 +6,8 @@ gliderSettings: "Planeo"
 gliderDescription: "Planea con gracia por el aire realizando un doble salto cuando tus manos no tienen nada equipado y no te estás moviendo ni hacia adelante ni hacia atrás.\nLos planeadores y sus mejoras solo están disponibles al completar una misión."
 surfSettings: "Surf con escudo"
 surfDescription: "Deslízate por las pendientes sobre tu escudo realizando un doble salto cuando tus manos no tienen nada equipado y te estás moviendo hacia atrás."
+enableQuestName: "Activar misión"
+enableQuestDescription: "Desactiva para desactivar la misión del planeador. La calidad de tu planeador se desbloqueará según tu habilidad de Acrobacia."
 
 enableName: "Activar"
 enableDescription: "Activa o desactiva esta función."
