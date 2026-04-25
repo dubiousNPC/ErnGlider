@@ -28,6 +28,11 @@ volumeDescription: "Factor de volumen de los efectos de sonido."
 chimTrickyName: "CHIM Tricky"
 chimTrickyDescription: "Usar una interfaz HUD personalizada mientras haces surf."
 
+GlideKeyName: "Alternar botón de planeo"
+SurfKeyName: "Alternar botón de surf"
+EnableJumpControlName: "Control de salto"
+EnableJumpControlDescription: "Alterna el planeo y el surf al saltar con entrada direccional. Desactívalo para eliminar la activación mediante el salto. Tendrás que asignar los botones de planeo y surf por separado."
+
 # CHIM Tricky stuff
 kph: "{value} km/h"
 dropToast: "¡Caída de {height} m!"

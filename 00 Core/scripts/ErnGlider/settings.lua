@@ -15,16 +15,29 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]
-local interfaces     = require("openmw.interfaces")
-local storage        = require("openmw.storage")
-local MOD_NAME       = require("scripts.ErnGlider.ns")
-local util           = require('openmw.util')
+local interfaces            = require("openmw.interfaces")
+local storage               = require("openmw.storage")
+local MOD_NAME              = require("scripts.ErnGlider.ns")
+local input                 = require('openmw.input')
 
-local mainGroupKey   = "Settings/" .. MOD_NAME
-local gliderGroupKey = "Settings/" .. MOD_NAME .. "/glider"
-local surfGroupKey   = "Settings/" .. MOD_NAME .. "/surf"
+local mainGroupKey          = "Settings/" .. MOD_NAME
+local gliderGroupKey        = "Settings/" .. MOD_NAME .. "/glider"
+local surfGroupKey          = "Settings/" .. MOD_NAME .. "/surf"
+
+local toggleGlideTriggerKey = MOD_NAME .. "_GlideTrigger"
+local toggleSurfTriggerKey  = MOD_NAME .. "_SurfTrigger"
 
 local function init()
+    input.registerTrigger {
+        key = toggleGlideTriggerKey,
+        l10n = MOD_NAME,
+    }
+
+    input.registerTrigger {
+        key = toggleSurfTriggerKey,
+        l10n = MOD_NAME,
+    }
+
     interfaces.Settings.registerPage {
         key = MOD_NAME,
         l10n = MOD_NAME,
@@ -72,6 +85,13 @@ local function init()
                 renderer = "checkbox",
             },
             {
+                key = "enableJumpControl",
+                name = "EnableJumpControlName",
+                description = "EnableJumpControlDescription",
+                default = true,
+                renderer = "checkbox",
+            },
+            {
                 key = "debugMode",
                 name = "debugName",
                 default = false,
@@ -113,6 +133,16 @@ local function init()
                     integer = true,
                     min = 0,
                     max = 100
+                }
+            },
+            {
+                key = "k_" .. toggleGlideTriggerKey,
+                renderer = 'inputBinding',
+                name = "GlideKeyName",
+                default = 'None10',
+                argument = {
+                    key = toggleGlideTriggerKey,
+                    type = 'trigger',
                 }
             },
         }
@@ -164,6 +194,16 @@ local function init()
                 description = "chimTrickyDescription",
                 default = false,
                 renderer = "checkbox",
+            },
+            {
+                key = "k_" .. toggleSurfTriggerKey,
+                renderer = 'inputBinding',
+                name = "SurfKeyName",
+                default = 'None10',
+                argument = {
+                    key = toggleSurfTriggerKey,
+                    type = 'trigger',
+                }
             },
         }
     }
@@ -229,8 +269,13 @@ end
 ---@type Settings
 return {
     init = init,
+    -- settings getters
     main = mainContainer,
     surf = surfContainer,
     glider = gliderContainer,
+    -- helper fnc
     debugPrint = debugPrint,
+    -- triggers
+    toggleGlideTriggerKey = toggleGlideTriggerKey,
+    toggleSurfTriggerKey = toggleSurfTriggerKey,
 }

@@ -28,6 +28,11 @@ volumeDescription: "音效音量系数。"
 chimTrickyName: "CHIM Tricky"
 chimTrickyDescription: "滑行时使用自定义 HUD。"
 
+GlideKeyName: "切换滑翔按钮"
+SurfKeyName: "切换滑行按钮"
+EnableJumpControlName: "跳跃控制"
+EnableJumpControlDescription: "在带方向输入跳跃时切换滑翔和滑行。关闭此项可禁用通过跳跃进行切换。你需要分别绑定滑翔和滑行按钮。"
+
 # CHIM Tricky stuff
 kph: "{value} 公里/小时"
 dropToast: "{height}米坠落！"

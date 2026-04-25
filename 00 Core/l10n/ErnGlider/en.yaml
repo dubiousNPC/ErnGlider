@@ -28,6 +28,11 @@ volumeDescription: "Sound effect volume factor."
 chimTrickyName: "CHIM Tricky"
 chimTrickyDescription: "Use a custom HUD while surfing."
 
+GlideKeyName: "Toggle Glide Button"
+SurfKeyName: "Toggle Surf Button"
+EnableJumpControlName: "Jump Control"
+EnableJumpControlDescription: "Toggle gliding and surfing when jumping with directional input. Disable to remove toggling with Jump input. You will need to bind Glide and Surf buttons separately."
+
 # CHIM Tricky stuff
 kph: "{value} kph"
 dropToast: "{height}m Drop!"
