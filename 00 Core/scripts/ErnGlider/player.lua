@@ -50,6 +50,10 @@ input.registerTriggerHandler("Jump", async:callback(
             return
         end
 
+        if not settings.main.enableJumpControl then
+            return
+        end
+
         -- apply special movement
         if animation.isPlaying(pself, "jump") then
             if pself.controls.movement > settings.main.deadzone then

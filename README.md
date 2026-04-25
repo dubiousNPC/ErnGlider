@@ -25,6 +25,8 @@ If you have the OpenMW Camera set to "Move 360", the glider and shield won't ren
 
 Gliders only work while outside. While in an unreadied stance (your weapon is sheathed and you don't have your spellcasting hands out), do a double jump while not holding forward or backward. This will activate your glider, which drains fatigue. Tap your jump button again to put the glider away.
 
+Alternatively, you may bind a dedicated key to toggle the Glider in the settings.
+
 ### Glider Quest Walkthrough
 
 You can disable this quest completely in the mod settings. This is helpful if you're not playing on an English version of Morrowind.
@@ -52,6 +54,8 @@ Masterwork glider: `setJournalIndex eg_glider 31`
 ## Shield Surfing
 
 While in an unreadied stance (your weapon is sheathed and you don't have your spellcasting hands out), do a double jump while holding backward. Shield surfing damages your shield, but you move faster while heading down-slope. Double-tap your jump button again to put your shield away.
+
+Alternatively, you may bind a dedicated key to toggle Shield Surfing in the settings.
 
 Lighter shields take less damage from falls, and accelerate and de-accelerate faster.
 Heavier shields have a faster top speed.

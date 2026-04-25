@@ -1,3 +1,4 @@
+PLAYER: scripts/ErnGlider/register_triggers.lua
 MENU: scripts/ErnGlider/menu_settings.lua
 PLAYER: scripts/ErnGlider/glider.lua
 PLAYER: scripts/ErnGlider/surf.lua
